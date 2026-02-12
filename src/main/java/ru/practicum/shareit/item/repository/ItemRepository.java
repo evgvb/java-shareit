@@ -82,28 +82,4 @@ public class ItemRepository {
             }
         }
     }
-
-    public boolean existsById(Long id) {
-        return items.containsKey(id);
-    }
-
-    public List<Item> findAllByRequestIdIn(List<Long> requestIds) {
-        List<Item> result = new ArrayList<>();
-        for (Item item : items.values()) {
-            if (item.getRequest() != null && requestIds.contains(item.getRequest().getId())) {
-                result.add(item);
-            }
-        }
-        return result;
-    }
-
-    public List<Item> findAllByRequestId(Long requestId) {
-        List<Item> result = new ArrayList<>();
-        for (Item item : items.values()) {
-            if (item.getRequest() != null && item.getRequest().getId().equals(requestId)) {
-                result.add(item);
-            }
-        }
-        return result;
-    }
 }

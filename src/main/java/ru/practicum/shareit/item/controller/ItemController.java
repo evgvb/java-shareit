@@ -7,7 +7,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-import ru.practicum.shareit.item.dto.ItemWithBookingsDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.dto.ItemUpdateDto;
 import ru.practicum.shareit.item.service.ItemService;
@@ -22,7 +21,6 @@ import java.util.List;
 public class ItemController {
 
     private final ItemService itemService;
-    private final ItemServiceImpl itemServiceImpl;
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
@@ -34,7 +32,7 @@ public class ItemController {
     }
 
     @PutMapping("/{itemId}")
-    @Validated(ItemDto.Update.class) // ВАЖНО: Группа валидации для обновления
+    @Validated(ItemDto.Update.class)
     public ItemDto updateItem(
             @PathVariable @Positive Long itemId,
             @Valid @RequestBody ItemDto itemDto,
@@ -85,20 +83,5 @@ public class ItemController {
             @RequestHeader("X-Sharer-User-Id") @Positive Long userId) {
         log.info("DELETE /items/{} - удаление вещи пользователем с ID: {}", itemId, userId);
         itemService.deleteItem(itemId, userId);
-    }
-
-    @GetMapping("/{itemId}/with-bookings")
-    public ItemWithBookingsDto getItemWithBookings(
-            @PathVariable @Positive Long itemId,
-            @RequestHeader("X-Sharer-User-Id") @Positive Long userId) {
-        log.info("GET /items/{}/with-bookings - получение вещи с бронированиями", itemId);
-        return itemServiceImpl.getItemWithBookings(itemId, userId);
-    }
-
-    @GetMapping("/with-bookings")
-    public List<ItemWithBookingsDto> getAllItemsWithBookingsByOwner(
-            @RequestHeader("X-Sharer-User-Id") @Positive Long userId) {
-        log.info("GET /items/with-bookings - получение всех вещей с бронированиями");
-        return itemServiceImpl.getAllItemsWithBookingsByOwner(userId);
     }
 }
