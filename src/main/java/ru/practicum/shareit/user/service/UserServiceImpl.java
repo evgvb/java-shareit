@@ -4,12 +4,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.dto.UserUpdateDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
@@ -34,35 +34,21 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public UserDto updateUser(Long userId, UserDto userDto) {
+    public UserDto updateUser(Long userId, Map<String, Object> updates) {
         log.info("Обновление пользователя с ID: {}", userId);
 
-        User existingUser = userRepository.findById(userId)
-                .orElseThrow(() -> new NoSuchElementException("Пользователь с ID " + userId + " не найден"));
+        User existingUser = findUserById(userId);
 
-        if (userDto.getEmail() != null) {
-            verificationUserMail(userDto.getEmail().toLowerCase());
+        if (updates.containsKey("email") && updates.get("email") != null) {
+            String newEmail = updates.get("email").toString().toLowerCase();
+            String oldEmail = existingUser.getEmail().toLowerCase();
+
+            if (!oldEmail.equals(newEmail)) {
+                verificationUserMail(newEmail);
+            }
         }
 
-        User updatedUser = UserMapper.updateUserFromDto(existingUser, userDto);
-        User savedUser = userRepository.update(updatedUser);
-
-        log.info("Пользователь с ID {} обновлен", userId);
-        return UserMapper.toUserDto(savedUser);
-    }
-
-    // Частичное обновление пользователя. Обновляет только полученные поля
-    public UserDto partialUpdateUser(Long userId, UserUpdateDto updateDto) {
-        log.info("Обновление пользователя с ID: {}", userId);
-
-        User existingUser = userRepository.findById(userId)
-                .orElseThrow(() -> new NoSuchElementException("Пользователь с ID " + userId + " не найден"));
-
-        if (updateDto.getEmail() != null && !updateDto.getEmail().isBlank()) {
-            verificationUserMail(updateDto.getEmail().toLowerCase());
-        }
-
-        User updatedUser = UserMapper.updateUserFromDto(existingUser, updateDto);
+        User updatedUser = UserMapper.updateFromMap(existingUser, updates);
         User savedUser = userRepository.update(updatedUser);
 
         log.info("Пользователь с ID {} обновлен", userId);
@@ -73,8 +59,7 @@ public class UserServiceImpl implements UserService {
     public UserDto getUserById(Long userId) {
         log.info("Получение пользователя с ID: {}", userId);
 
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new NoSuchElementException("Пользователь с ID " + userId + " не найден"));
+        User user = findUserById(userId);
 
         return UserMapper.toUserDto(user);
     }
@@ -92,9 +77,7 @@ public class UserServiceImpl implements UserService {
     public void deleteUser(Long userId) {
         log.info("Удаление пользователя с ID: {}", userId);
 
-        if (!userRepository.existsById(userId)) {
-            throw new NoSuchElementException("Пользователь с ID " + userId + " не найден");
-        }
+        findUserById(userId);
 
         userRepository.deleteById(userId);
         log.info("Пользователь с ID {} удален", userId);
@@ -104,5 +87,9 @@ public class UserServiceImpl implements UserService {
         if (userRepository.existsByEmail(email)) {
             throw new IllegalArgumentException("Email " + email + " уже используется другим пользователем");
         }
+    }
+
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("Пользователь с ID " + userId + " не найден"));
     }
 }

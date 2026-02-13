@@ -4,7 +4,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.ItemUpdateDto;
 import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
@@ -12,6 +11,7 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
@@ -38,28 +38,16 @@ public class ItemServiceImpl implements ItemService {
     }
 
     @Override
-    public ItemDto updateItem(Long itemId, ItemDto itemDto, Long ownerId) {
+    public ItemDto updateItem(Long itemId, Map<String, Object> updates, Long ownerId) {
         log.info("Обновление вещи с ID: {} пользователем с ID: {}", itemId, ownerId);
 
         Item item = findItemById(itemId);
         verificationOwnerItem(item, ownerId);
 
-        Item updatedItem = ItemMapper.updateItemFromDto(item, itemDto);
+        Item updatedItem = ItemMapper.updateFromMap(item, updates);
         Item savedItem = itemRepository.update(updatedItem);
 
         log.info("Вещь с ID {} обновлена", itemId);
-        return ItemMapper.toItemDto(savedItem);
-    }
-
-    public ItemDto partialUpdateItem(Long itemId, ItemUpdateDto updateDto, Long ownerId) {
-
-        Item item = findItemById(itemId);
-        verificationOwnerItem(item, ownerId);
-
-        Item updatedItem = ItemMapper.updateItemFromDto(item, updateDto);
-        Item savedItem = itemRepository.update(updatedItem);
-
-        log.info("Вещь с ID {} частично обновлена", itemId);
         return ItemMapper.toItemDto(savedItem);
     }
 

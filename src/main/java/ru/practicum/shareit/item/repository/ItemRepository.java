@@ -35,10 +35,6 @@ public class ItemRepository {
     }
 
     public List<Item> search(String text) {
-        if (text == null || text.isBlank()) {
-            return Collections.emptyList();
-        }
-
         String searchText = text.toLowerCase();
         List<Item> result = new ArrayList<>();
 
@@ -54,14 +50,6 @@ public class ItemRepository {
     }
 
     public Item update(Item item) {
-        if (item.getId() == null || !items.containsKey(item.getId())) {
-            throw new NoSuchElementException("Вещь не найдена");
-        }
-
-        Item oldItem = items.get(item.getId());
-
-        item.setOwner(oldItem.getOwner());
-
         items.put(item.getId(), item);
         return item;
     }

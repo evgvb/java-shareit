@@ -19,7 +19,7 @@ public class UserDto {
     private String name;
 
     @NotBlank(groups = {Create.class}, message = "Email не может быть пустым")
-    @Email(groups = {Create.class, Update.class}, message = "Некорректный формат email")
+    @Email(groups = {Create.class}, message = "Некорректный формат email")
     private String email;
 
     public interface Create {}

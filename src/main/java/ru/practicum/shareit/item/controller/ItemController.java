@@ -8,11 +8,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.item.dto.ItemDto;
-import ru.practicum.shareit.item.dto.ItemUpdateDto;
 import ru.practicum.shareit.item.service.ItemService;
-import ru.practicum.shareit.item.service.ItemServiceImpl;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/items")
@@ -31,26 +30,14 @@ public class ItemController {
         return itemService.createItem(itemDto, userId);
     }
 
-    @PutMapping("/{itemId}")
+    @PatchMapping("/{itemId}")
     @Validated(ItemDto.Update.class)
     public ItemDto updateItem(
             @PathVariable @Positive Long itemId,
-            @Valid @RequestBody ItemDto itemDto,
-            @RequestHeader("X-Sharer-User-Id") @Positive Long userId) {
-        log.info("PUT /items/{} - полное обновление вещи пользователем с ID: {}", itemId, userId);
-        return itemService.updateItem(itemId, itemDto, userId);
-    }
-
-    @PatchMapping("/{itemId}")
-    public ItemDto partialUpdateItem(
-            @PathVariable @Positive Long itemId,
-            @Valid @RequestBody ItemUpdateDto updateDto,
+            @RequestBody Map<String, Object> updates,
             @RequestHeader("X-Sharer-User-Id") @Positive Long userId) {
         log.info("PATCH /items/{} - обновление вещи пользователем с ID: {}", itemId, userId);
-        if (itemService instanceof ItemServiceImpl) {
-            return ((ItemServiceImpl) itemService).partialUpdateItem(itemId, updateDto, userId);
-        }
-        throw new UnsupportedOperationException("Метод не поддерживается");
+        return itemService.updateItem(itemId, updates, userId);
     }
 
     @GetMapping("/{itemId}")

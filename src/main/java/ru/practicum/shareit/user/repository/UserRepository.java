@@ -18,9 +18,6 @@ public class UserRepository {
         }
 
         String email = user.getEmail().toLowerCase();
-        if (emails.containsKey(email) && !emails.get(email).equals(user.getId())) {
-            throw new IllegalArgumentException("Email уже используется другим пользователем");
-        }
 
         users.put(user.getId(), user);
         emails.put(email, user.getId());
@@ -40,17 +37,10 @@ public class UserRepository {
     }
 
     public User update(User user) {
-        if (user.getId() == null || !users.containsKey(user.getId())) {
-            throw new NoSuchElementException("Пользователь не найден");
-        }
 
         User existingUser = users.get(user.getId());
         String oldEmail = existingUser.getEmail().toLowerCase();
         String newEmail = user.getEmail().toLowerCase();
-
-        if (!oldEmail.equals(newEmail) && emails.containsKey(newEmail)) {
-            throw new IllegalArgumentException("Email уже используется другим пользователем");
-        }
 
         emails.remove(oldEmail);
         emails.put(newEmail, user.getId());

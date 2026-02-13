@@ -2,8 +2,9 @@ package ru.practicum.shareit.user.mapper;
 
 import lombok.experimental.UtilityClass;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.dto.UserUpdateDto;
 import ru.practicum.shareit.user.model.User;
+
+import java.util.Map;
 
 @UtilityClass
 public class UserMapper {
@@ -32,34 +33,25 @@ public class UserMapper {
                 .build();
     }
 
-    public static User updateUserFromDto(User user, UserUpdateDto updateDto) {
-        if (updateDto == null) {
+    public static User updateFromMap(User user, Map<String, Object> updates) {
+        if (updates == null || updates.isEmpty()) {
             return user;
         }
 
-        if (updateDto.getName() != null && !updateDto.getName().isBlank()) {
-            user.setName(updateDto.getName());
-        }
-
-        if (updateDto.getEmail() != null && !updateDto.getEmail().isBlank()) {
-            user.setEmail(updateDto.getEmail());
-        }
-
-        return user;
-    }
-
-    public static User updateUserFromDto(User user, UserDto userDto) {
-        if (userDto == null) {
-            return user;
-        }
-
-        if (userDto.getName() != null && !userDto.getName().isBlank()) {
-            user.setName(userDto.getName());
-        }
-
-        if (userDto.getEmail() != null && !userDto.getEmail().isBlank()) {
-            user.setEmail(userDto.getEmail());
-        }
+        updates.forEach((key, value) -> {
+            switch (key) {
+                case "name":
+                    if (value != null && !value.toString().isBlank()) {
+                        user.setName(value.toString());
+                    }
+                    break;
+                case "email":
+                    if (value != null && !value.toString().isBlank()) {
+                        user.setEmail(value.toString());
+                    }
+                    break;
+            }
+        });
 
         return user;
     }

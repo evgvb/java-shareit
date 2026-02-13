@@ -7,10 +7,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.dto.UserUpdateDto;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping(path = "/users")
@@ -29,22 +29,11 @@ public class UserController {
         return userService.createUser(userDto);
     }
 
-    @PutMapping("/{userId}")
-    @Validated(UserDto.Update.class)
-    public UserDto updateUser(@PathVariable Long userId, @Valid @RequestBody UserDto userDto) {
-        log.info("PUT /users/{} - полное обновление пользователя", userId);
-        return userService.updateUser(userId, userDto);
-    }
-
     @PatchMapping("/{userId}")
-    public UserDto partialUpdateUser(@PathVariable Long userId, @Valid @RequestBody UserUpdateDto updateDto) {
+    @Validated(UserDto.Update.class)
+    public UserDto updateUser(@PathVariable Long userId, @RequestBody Map<String, Object> updates) {
         log.info("PATCH /users/{} - обновление пользователя", userId);
-
-        if (userService instanceof ru.practicum.shareit.user.service.UserServiceImpl) {
-            return ((ru.practicum.shareit.user.service.UserServiceImpl) userService)
-                    .partialUpdateUser(userId, updateDto);
-        }
-        throw new UnsupportedOperationException("Метод не поддерживается");
+        return userService.updateUser(userId, updates);
     }
 
     @GetMapping("/{userId}")

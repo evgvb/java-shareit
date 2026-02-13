@@ -80,24 +80,6 @@ public class ItemTest {
         assertTrue(result.get(0).getAvailable(), "Вернувшаяся вещь должна быть доступна");
     }
 
-    // поиск с пустым текстом
-    @Test
-    void search_shouldReturnEmptyListWhenTextIsBlank() {
-        Item item = Item.builder()
-                .name("Item")
-                .description("item описание")
-                .available(true)
-                .owner(owner)
-                .build();
-        itemRepository.save(item);
-
-        List<Item> result1 = itemRepository.search("");
-        List<Item> result2 = itemRepository.search("   ");
-
-        assertTrue(result1.isEmpty(), "Поиск с пустой строкой должен возвращать пустой список");
-        assertTrue(result2.isEmpty(), "Поиск с пробелами должен возвращать пустой список");
-    }
-
     // поиск вещей владельца
     @Test
     void findAllByOwnerId_shouldReturnOwnerItems() {
