@@ -12,7 +12,7 @@ import java.util.NoSuchElementException;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class UserTest extends IntegrationTest{
+public class UserTest extends IntegrationTest {
     @Autowired
     private UserService userService;
 
