@@ -10,6 +10,7 @@ import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @Repository
@@ -89,4 +90,10 @@ public interface BookingRepository extends JpaRepository<Booking, Long> {
     List<Booking> findNextBookingForItem(
             @Param("itemId") Long itemId,
             @Param("now") LocalDateTime now);
+
+    @Query("SELECT b FROM Booking b " +
+            "WHERE b.item.id IN :itemIds " +
+            "AND b.status = 'APPROVED' " +
+            "ORDER BY b.start DESC")
+    List<Booking> findAllApprovedByItemIds(@Param("itemIds") Collection<Long> itemIds);
 }

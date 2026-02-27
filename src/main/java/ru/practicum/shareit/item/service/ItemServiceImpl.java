@@ -22,6 +22,7 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.time.LocalDateTime;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -43,8 +44,7 @@ public class ItemServiceImpl implements ItemService {
     public ItemDto createItem(ItemDto itemDto, Long ownerId) {
         log.info("Создание новой вещи пользователем с ID: {}", ownerId);
 
-        User owner = userRepository.findById(ownerId)
-                .orElseThrow(() -> new NoSuchElementException("Пользователь с ID " + ownerId + " не найден"));
+        User owner = findUserById(ownerId);
 
         Item item = ItemMapper.toItem(itemDto, owner, null);
         Item savedItem = itemRepository.save(item);
@@ -86,15 +86,55 @@ public class ItemServiceImpl implements ItemService {
             throw new NoSuchElementException("Пользователь с ID " + ownerId + " не найден");
         }
 
+        // Получаем все вещи владельца (2 запрос)
         List<Item> items = itemRepository.findAllByOwnerId(ownerId);
 
+        // Применяем пагинацию
         List<Item> paginatedItems = items.stream()
                 .skip(from)
                 .limit(size)
                 .toList();
 
+        // Если нет вещей, возвращаем пустой список
+        if (paginatedItems.isEmpty()) {
+            return List.of();
+        }
+
+        // Собираем ID вещей для запросов
+        List<Long> itemIds = paginatedItems.stream()
+                .map(Item::getId)
+                .collect(Collectors.toList());
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Получаем все бронирования для этих вещей (3 запрос)
+        List<Booking> allBookings = bookingRepository.findAllApprovedByItemIds(itemIds);
+
+        // Группируем бронирования по ID вещи
+        Map<Long, List<Booking>> bookingsByItemId = allBookings.stream()
+                .collect(Collectors.groupingBy(booking -> booking.getItem().getId()));
+
+        // Получаем все комментарии для этих вещей (4 запрос)
+        List<Comment> allComments = commentRepository.findAllByItemIdIn(itemIds);
+
+        // Группируем комментарии по ID вещи
+        Map<Long, List<Comment>> commentsByItemId = allComments.stream()
+                .collect(Collectors.groupingBy(comment -> comment.getItem().getId()));
+
+        // Формируем результат, используя данные из мап
         return paginatedItems.stream()
-                .map(item -> enhanceItemDtoWithBookingsAndComments(item, ownerId))
+                .map(item -> {
+                    List<Booking> itemBookings = bookingsByItemId.getOrDefault(item.getId(), List.of());
+                    List<Comment> itemComments = commentsByItemId.getOrDefault(item.getId(), List.of());
+
+                    return enhanceItemDtoWithBookingsAndCommentsFromMaps(
+                            item,
+                            itemBookings,
+                            itemComments,
+                            now,
+                            ownerId
+                    );
+                })
                 .collect(Collectors.toList());
     }
 
@@ -148,8 +188,7 @@ public class ItemServiceImpl implements ItemService {
 
         Item item = findItemById(itemId);
 
-        User author = userRepository.findById(authorId)
-                .orElseThrow(() -> new NoSuchElementException("Пользователь с ID " + authorId + " не найден"));
+        User author = findUserById(authorId);
 
         // Проверяем, что пользователь брал и вернул эту вещь
         LocalDateTime now = LocalDateTime.now();
@@ -188,5 +227,42 @@ public class ItemServiceImpl implements ItemService {
         }
 
         return ItemMapper.toItemDtoWithComments(item, comments);
+    }
+
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("Пользователь с ID " + userId + " не найден"));
+    }
+
+    private ItemDto enhanceItemDtoWithBookingsAndCommentsFromMaps(
+            Item item,
+            List<Booking> itemBookings,
+            List<Comment> itemComments,
+            LocalDateTime now,
+            Long userId) {
+
+        List<CommentDto> commentDtos = itemComments.stream()
+                .map(CommentMapper::toCommentDto)
+                .collect(Collectors.toList());
+
+        if (item.getOwner().getId().equals(userId)) {
+            List<Booking> pastBookings = itemBookings.stream()
+                    .filter(b -> b.getEnd().isBefore(now))
+                    .sorted((b1, b2) -> b2.getEnd().compareTo(b1.getEnd()))
+                    .toList();
+
+            List<Booking> futureBookings = itemBookings.stream()
+                    .filter(b -> b.getStart().isAfter(now))
+                    .sorted(Comparator.comparing(Booking::getStart))
+                    .toList();
+
+            BookingResponseDto lastBooking = pastBookings.isEmpty() ? null :
+                    BookingMapper.toBookingResponseDto(pastBookings.get(0));
+            BookingResponseDto nextBooking = futureBookings.isEmpty() ? null :
+                    BookingMapper.toBookingResponseDto(futureBookings.get(0));
+
+            return ItemMapper.toItemDtoWithBookings(item, lastBooking, nextBooking, commentDtos);
+        }
+
+        return ItemMapper.toItemDtoWithComments(item, commentDtos);
     }
 }

@@ -40,11 +40,9 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponseDto createBooking(BookingDto bookingDto, Long bookerId) {
         log.info("Создание нового бронирования пользователем ID: {}", bookerId);
 
-        User booker = userRepository.findById(bookerId)
-                .orElseThrow(() -> new NoSuchElementException("Пользователь с ID " + bookerId + " не найден"));
+        User booker = findUserById(bookerId);
 
-        Item item = itemRepository.findById(bookingDto.getItemId())
-                .orElseThrow(() -> new NoSuchElementException("Вещь с ID " + bookingDto.getItemId() + " не найдена"));
+        Item item = findItemById(bookingDto.getItemId());
 
         if (!item.getAvailable()) {
             throw new ValidationException("Вещь с ID " + item.getId() + " недоступна для бронирования");
@@ -73,8 +71,7 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponseDto approveBooking(Long bookingId, Boolean approved, Long ownerId) {
         log.info("Подтверждение/отклонение бронирования ID: {} владельцем ID: {}", bookingId, ownerId);
 
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new NoSuchElementException("Бронирование с ID " + bookingId + " не найдено"));
+        Booking booking = findBookingById(bookingId);
 
         if (!booking.getItem().getOwner().getId().equals(ownerId)) {
             log.warn("Пользователь ID {} не является владельцем вещи ID {}", ownerId, booking.getItem().getId());
@@ -99,8 +96,7 @@ public class BookingServiceImpl implements BookingService {
     public BookingResponseDto getBookingById(Long bookingId, Long userId) {
         log.info("Получение бронирования ID: {} пользователем ID: {}", bookingId, userId);
 
-        Booking booking = bookingRepository.findById(bookingId)
-                .orElseThrow(() -> new NoSuchElementException("Бронирование с ID " + bookingId + " не найдено"));
+        Booking booking = findBookingById(bookingId);
 
         // пользователь не автор/владелец
         if (!booking.getBooker().getId().equals(userId) &&
@@ -123,8 +119,6 @@ public class BookingServiceImpl implements BookingService {
         }
 
         LocalDateTime now = LocalDateTime.now();
-
-        ///Pageable pageable = PageRequest.of(from / size, size, SORT_BY_START_DESC);
 
         List<Booking> bookings;
 
@@ -178,8 +172,6 @@ public class BookingServiceImpl implements BookingService {
 
         LocalDateTime now = LocalDateTime.now();
 
-        ///Pageable pageable = PageRequest.of(from / size, size, SORT_BY_START_DESC);
-
         List<Booking> bookings;
 
         try {
@@ -223,5 +215,17 @@ public class BookingServiceImpl implements BookingService {
 
     private enum BookingState {
         ALL, CURRENT, PAST, FUTURE, WAITING, REJECTED
+    }
+
+    private User findUserById(Long userId) {
+        return userRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("Пользователь с ID " + userId + " не найден"));
+    }
+
+    private Item findItemById(Long itemId) {
+        return itemRepository.findById(itemId).orElseThrow(() -> new NoSuchElementException("Вещь с ID " + itemId + " не найдена"));
+    }
+
+    private Booking findBookingById(Long bookingId) {
+        return bookingRepository.findById(bookingId).orElseThrow(() -> new NoSuchElementException("Бронирование с ID " + bookingId + " не найдено"));
     }
 }
