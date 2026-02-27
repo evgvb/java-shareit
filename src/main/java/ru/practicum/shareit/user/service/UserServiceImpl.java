@@ -3,6 +3,7 @@ package ru.practicum.shareit.user.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
@@ -16,11 +17,13 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Slf4j
+@Transactional(readOnly = true)
 public class UserServiceImpl implements UserService {
 
     private final UserRepository userRepository;
 
     @Override
+    @Transactional
     public UserDto createUser(UserDto userDto) {
         log.info("Создание нового пользователя: {}", userDto.getEmail());
 
@@ -34,6 +37,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public UserDto updateUser(Long userId, Map<String, Object> updates) {
         log.info("Обновление пользователя с ID: {}", userId);
 
@@ -49,7 +53,7 @@ public class UserServiceImpl implements UserService {
         }
 
         User updatedUser = UserMapper.updateFromMap(existingUser, updates);
-        User savedUser = userRepository.update(updatedUser);
+        User savedUser = userRepository.save(updatedUser);
 
         log.info("Пользователь с ID {} обновлен", userId);
         return UserMapper.toUserDto(savedUser);
@@ -74,6 +78,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @Transactional
     public void deleteUser(Long userId) {
         log.info("Удаление пользователя с ID: {}", userId);
 

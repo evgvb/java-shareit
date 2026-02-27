@@ -1,13 +1,15 @@
 package ru.practicum.shareit.item.mapper;
 
-import lombok.experimental.UtilityClass;
+import ru.practicum.shareit.booking.dto.BookingResponseDto;
+import ru.practicum.shareit.item.dto.CommentDto;
 import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.model.Item;
+import ru.practicum.shareit.request.model.ItemRequest;
 import ru.practicum.shareit.user.model.User;
 
+import java.util.List;
 import java.util.Map;
 
-@UtilityClass
 public class ItemMapper {
 
     public static ItemDto toItemDto(Item item) {
@@ -20,10 +22,12 @@ public class ItemMapper {
                 .name(item.getName())
                 .description(item.getDescription())
                 .available(item.getAvailable())
+                .ownerId(item.getOwner().getId())
+                .requestId(item.getRequest() != null ? item.getRequest().getId() : null)
                 .build();
     }
 
-    public static Item toItem(ItemDto itemDto, User owner) {
+    public static Item toItem(ItemDto itemDto, User owner, ItemRequest request) {
         if (itemDto == null) {
             return null;
         }
@@ -34,6 +38,7 @@ public class ItemMapper {
                 .description(itemDto.getDescription())
                 .available(itemDto.getAvailable())
                 .owner(owner)
+                .request(request)
                 .build();
     }
 
@@ -64,4 +69,23 @@ public class ItemMapper {
 
         return item;
     }
+
+    public static ItemDto toItemDtoWithComments(Item item, List<CommentDto> comments) {
+        ItemDto dto = toItemDto(item);
+        if (dto != null) {
+            dto.setComments(comments);
+        }
+        return dto;
+    }
+
+    public static ItemDto toItemDtoWithBookings(Item item, BookingResponseDto lastBooking, BookingResponseDto nextBooking, List<CommentDto> comments) {
+        ItemDto dto = toItemDto(item);
+        if (dto != null) {
+            dto.setLastBooking(lastBooking);
+            dto.setNextBooking(nextBooking);
+            dto.setComments(comments);
+        }
+        return dto;
+    }
+
 }

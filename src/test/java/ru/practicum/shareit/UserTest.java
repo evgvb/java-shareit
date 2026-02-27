@@ -1,125 +1,156 @@
 package ru.practicum.shareit;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import ru.practicum.shareit.user.model.User;
-import ru.practicum.shareit.user.repository.UserRepository;
+import org.springframework.beans.factory.annotation.Autowired;
+import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.service.UserService;
 
 import java.util.List;
-import java.util.Optional;
+import java.util.Map;
+import java.util.NoSuchElementException;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-public class UserTest {
-    private UserRepository userRepository;
+public class UserTest extends IntegrationTest {
+    @Autowired
+    private UserService userService;
 
-    @BeforeEach
-    void setUp() {
-        userRepository = new UserRepository();
+    @Test
+    void createUser_ShouldSaveUser_WhenDataIsValid() {
+        UserDto userDto = UserDto.builder()
+                .name("Иван Петров")
+                .email("ivan@example.com")
+                .build();
+
+        UserDto createdUser = userService.createUser(userDto);
+
+        assertThat(createdUser.getId()).isNotNull();
+        assertThat(createdUser.getName()).isEqualTo("Иван Петров");
+        assertThat(createdUser.getEmail()).isEqualTo("ivan@example.com");
+
+        // Проверяем, что пользователь сохранился в БД
+        assertThat(userRepository.findById(createdUser.getId())).isPresent();
     }
 
-    // сохранение нового пользователя
     @Test
-    void save_shouldSaveNewUser() {
-        User user = User.builder()
-                .name("User 1")
-                .email("user1@email.com")
+    void createUser_ShouldThrowException_WhenEmailIsDuplicate() {
+
+        UserDto userDto1 = UserDto.builder()
+                .name("Иван Петров")
+                .email("duplicate@example.com")
                 .build();
 
-        User savedUser = userRepository.save(user);
+        UserDto userDto2 = UserDto.builder()
+                .name("Петр Иванов")
+                .email("duplicate@example.com")
+                .build();
 
-        assertNotNull(savedUser.getId(), "Сохраненному пользователю должен быть присвоен ID");
+        userService.createUser(userDto1);
 
-        assertEquals("User 1", savedUser.getName(), "Имя должно сохраниться");
-        assertEquals("user1@email.com", savedUser.getEmail(), "Email должен сохраниться");
+        assertThatThrownBy(() -> userService.createUser(userDto2))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("уже используется");
     }
 
-    // поиска пользователя по ID
     @Test
-    void findById_shouldReturnUserWhenExists() {
-        User user = User.builder()
-                .name("User 1")
-                .email("user1@email.com")
+    void getUserById_ShouldReturnUser_WhenUserExists() {
+        UserDto userDto = UserDto.builder()
+                .name("Мария Сидорова")
+                .email("maria@example.com")
                 .build();
-        User savedUser = userRepository.save(user);
 
-        Optional<User> foundUser = userRepository.findById(savedUser.getId());
+        UserDto savedUser = userService.createUser(userDto);
 
-        assertTrue(foundUser.isPresent(), "Пользователь должен быть найден");
-        assertEquals(savedUser.getId(), foundUser.get().getId(), "ID найденного пользователя должен совпадать");
-        assertEquals("User 1", foundUser.get().getName(), "Имя должно совпадать");
+        UserDto foundUser = userService.getUserById(savedUser.getId());
+
+        assertThat(foundUser.getId()).isEqualTo(savedUser.getId());
+        assertThat(foundUser.getName()).isEqualTo("Мария Сидорова");
+        assertThat(foundUser.getEmail()).isEqualTo("maria@example.com");
     }
 
-    // поиска несуществующего пользователя
     @Test
-    void findById_shouldReturnEmptyWhenNotExists() {
-        Optional<User> foundUser = userRepository.findById(999L);
-
-        assertTrue(foundUser.isEmpty(), "Для несуществующего ID должен вернуться пустой Optional");
+    void getUserById_ShouldThrowException_WhenUserDoesNotExist() {
+        assertThatThrownBy(() -> userService.getUserById(999L))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessageContaining("не найден");
     }
 
-    // обновление пользователя
     @Test
-    void update_shouldUpdateUser() {
-        User user = User.builder()
-                .name("User 1")
-                .email("user1@email.com")
-                .build();
-        User savedUser = userRepository.save(user);
+    void updateUser_ShouldUpdateName_WhenOnlyNameProvided() {
 
-        // Создаем объект с обновленными данными
-        User updatedUser = User.builder()
-                .id(savedUser.getId())
-                .name("User Update")
-                .email("userUpdate@email.com")
+        UserDto userDto = UserDto.builder()
+                .name("Алексей Алексеев")
+                .email("alexey@example.com")
                 .build();
 
-        User result = userRepository.update(updatedUser);
+        UserDto savedUser = userService.createUser(userDto);
 
-        assertEquals("User Update", result.getName(), "Имя должно обновиться");
-        assertEquals("userUpdate@email.com", result.getEmail(), "Email должен обновиться");
+        Map<String, Object> updates = Map.of("name", "Алексей Обновленный");
+        UserDto updatedUser = userService.updateUser(savedUser.getId(), updates);
+
+        assertThat(updatedUser.getId()).isEqualTo(savedUser.getId());
+        assertThat(updatedUser.getName()).isEqualTo("Алексей Обновленный");
+        assertThat(updatedUser.getEmail()).isEqualTo("alexey@example.com");
     }
 
-    // удаление пользователя
     @Test
-    void deleteById_shouldDeleteUser() {
-        User user = User.builder()
-                .name("User 1")
-                .email("user1@email.com")
+    void updateUser_ShouldUpdateEmail_WhenOnlyEmailProvided() {
+        // Подготовка
+        UserDto userDto = UserDto.builder()
+                .name("Елена Смирнова")
+                .email("elena@example.com")
                 .build();
-        User savedUser = userRepository.save(user);
 
-        userRepository.deleteById(savedUser.getId());
+        UserDto savedUser = userService.createUser(userDto);
 
-        assertTrue(userRepository.findById(savedUser.getId()).isEmpty(),
-                "После удаления пользователя нет");
+        Map<String, Object> updates = Map.of("email", "elena.new@example.com");
+        UserDto updatedUser = userService.updateUser(savedUser.getId(), updates);
+
+        assertThat(updatedUser.getId()).isEqualTo(savedUser.getId());
+        assertThat(updatedUser.getName()).isEqualTo("Елена Смирнова");
+        assertThat(updatedUser.getEmail()).isEqualTo("elena.new@example.com");
     }
 
-    // получение всех пользователей
     @Test
-    void findAll_shouldReturnAllUsers() {
+    void getAllUsers_ShouldReturnAllUsers() {
 
-        User user1 = User.builder()
-                .name("User 1")
-                .email("user1@email.com")
+        UserDto user1 = UserDto.builder().name("User 1").email("user1@test.com").build();
+        UserDto user2 = UserDto.builder().name("User 2").email("user2@test.com").build();
+        UserDto user3 = UserDto.builder().name("User 3").email("user3@test.com").build();
+
+        userService.createUser(user1);
+        userService.createUser(user2);
+        userService.createUser(user3);
+
+        List<UserDto> allUsers = userService.getAllUsers();
+
+        assertThat(allUsers).hasSize(3);
+        assertThat(allUsers).extracting(UserDto::getName)
+                .containsExactlyInAnyOrder("User 1", "User 2", "User 3");
+    }
+
+    @Test
+    void deleteUser_ShouldRemoveUser_WhenUserExists() {
+
+        UserDto userDto = UserDto.builder()
+                .name("Для удаления")
+                .email("delete@test.com")
                 .build();
 
-        User user2 = User.builder()
-                .name("User 2")
-                .email("user2@email.com")
-                .build();
+        UserDto savedUser = userService.createUser(userDto);
 
-        userRepository.save(user1);
-        userRepository.save(user2);
+        userService.deleteUser(savedUser.getId());
 
-        List<User> users = userRepository.findAll();
+        assertThat(userRepository.findById(savedUser.getId())).isEmpty();
+        assertThatThrownBy(() -> userService.getUserById(savedUser.getId()))
+                .isInstanceOf(NoSuchElementException.class);
+    }
 
-        assertEquals(2, users.size(), "Должно вернуться 2 пользователя");
-
-        boolean has1 = users.stream().anyMatch(u -> u.getName().equals("User 1"));
-        boolean has2 = users.stream().anyMatch(u -> u.getName().equals("User 2"));
-
-        assertTrue(has1, "В списке должен быть пользователь User 1");
-        assertTrue(has2, "В списке должен быть пользователь User 2");
+    @Test
+    void deleteUser_ShouldThrowException_WhenUserDoesNotExist() {
+        assertThatThrownBy(() -> userService.deleteUser(999L))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessageContaining("не найден");
     }
 }
