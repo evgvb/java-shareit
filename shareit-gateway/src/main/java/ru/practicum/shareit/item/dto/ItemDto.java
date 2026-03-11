@@ -34,5 +34,6 @@ public class ItemDto {
     private List<CommentDto> comments;
 
     public interface Create {}
+
     public interface Update {}
 }

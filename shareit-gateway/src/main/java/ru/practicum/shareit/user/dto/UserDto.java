@@ -22,5 +22,6 @@ public class UserDto {
     private String email;
 
     public interface Create {}
+
     public interface Update {}
 }
