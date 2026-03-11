@@ -6,6 +6,7 @@ import org.springframework.http.MediaType;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingResponseDto;
 import ru.practicum.shareit.booking.model.BookingStatus;
+import ru.practicum.shareit.exception.ValidationException;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -232,5 +233,29 @@ class BookingControllerTest extends BaseControllerTest {
                 .andExpect(status().isOk());
 
         verify(bookingService, times(1)).getUserBookings(eq(userId), eq("ALL"), eq(5), eq(20));
+    }
+
+    @Test
+    void getUserBookings_ShouldReturn400_WhenInvalidState() throws Exception {
+        when(bookingService.getUserBookings(eq(userId), eq("UNKNOWN_STATE"), anyInt(), anyInt()))
+                .thenThrow(new ValidationException("Статус не определен: UNKNOWN_STATE"));
+
+        mockMvc.perform(get("/bookings")
+                        .header("X-Sharer-User-Id", userId)
+                        .param("state", "UNKNOWN_STATE"))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void getUserBookings_ShouldReturn400_WhenInvalidPagination() throws Exception {
+        when(bookingService.getUserBookings(eq(userId), eq("ALL"), eq(-1), eq(0)))
+                .thenThrow(new ValidationException("Параметр 'from' должен быть больше или равен 0"));
+
+        mockMvc.perform(get("/bookings")
+                        .header("X-Sharer-User-Id", userId)
+                        .param("state", "ALL")
+                        .param("from", "-1")
+                        .param("size", "0"))
+                .andExpect(status().isBadRequest());
     }
 }

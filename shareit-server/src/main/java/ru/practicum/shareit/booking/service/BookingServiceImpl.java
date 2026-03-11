@@ -114,9 +114,7 @@ public class BookingServiceImpl implements BookingService {
     public List<BookingResponseDto> getUserBookings(Long userId, String state, Integer from, Integer size) {
         log.info("Получение бронирований пользователя ID: {} с состоянием: {}", userId, state);
 
-        if (!userRepository.existsById(userId)) {
-            throw new NoSuchElementException("Пользователь с ID " + userId + " не найден");
-        }
+        validatePaginationParams(from, size);
 
         LocalDateTime now = LocalDateTime.now();
 
@@ -164,6 +162,8 @@ public class BookingServiceImpl implements BookingService {
     @Override
     public List<BookingResponseDto> getOwnerBookings(Long ownerId, String state, Integer from, Integer size) {
         log.info("Получение бронирований для вещей владельца ID: {} с состоянием: {}", ownerId, state);
+
+        validatePaginationParams(from, size);
 
         // Проверяем существование пользователя
         if (!userRepository.existsById(ownerId)) {
@@ -227,5 +227,14 @@ public class BookingServiceImpl implements BookingService {
 
     private Booking findBookingById(Long bookingId) {
         return bookingRepository.findById(bookingId).orElseThrow(() -> new NoSuchElementException("Бронирование с ID " + bookingId + " не найдено"));
+    }
+
+    private void validatePaginationParams(Integer from, Integer size) {
+        if (from == null || from < 0) {
+            throw new ValidationException("Параметр 'from' должен быть больше или равен 0");
+        }
+        if (size == null || size <= 0) {
+            throw new ValidationException("Параметр 'size' должен быть больше 0");
+        }
     }
 }

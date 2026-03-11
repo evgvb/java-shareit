@@ -19,7 +19,7 @@ public class BookingController {
     private final BookingService bookingService;
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)  // Добавляем статус 201
+    @ResponseStatus(HttpStatus.CREATED)
     public BookingResponseDto createBooking(
             @RequestBody BookingDto bookingDto,
             @RequestHeader("X-Sharer-User-Id") Long userId) {
@@ -64,4 +64,6 @@ public class BookingController {
         log.info("GET /bookings/owner?state={} - получение бронирований для вещей владельца ID: {}", state, userId);
         return bookingService.getOwnerBookings(userId, state, from, size);
     }
+
+
 }
