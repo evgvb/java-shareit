@@ -3,24 +3,32 @@ package ru.practicum.shareit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import ru.practicum.shareit.booking.dto.BookingDto;
 import ru.practicum.shareit.booking.dto.BookingResponseDto;
+import ru.practicum.shareit.booking.model.Booking;
 import ru.practicum.shareit.booking.model.BookingStatus;
 import ru.practicum.shareit.booking.service.BookingService;
 import ru.practicum.shareit.exception.AccessDeniedException;
 import ru.practicum.shareit.exception.ValidationException;
 import ru.practicum.shareit.item.dto.ItemDto;
+import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.service.ItemService;
 import ru.practicum.shareit.user.dto.UserDto;
+import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.when;
 
 public class BookingTest extends IntegrationTest {
 
@@ -397,5 +405,63 @@ public class BookingTest extends IntegrationTest {
                 ownerId, "ALL", 0, 10);
 
         assertThat(ownerBookings).hasSize(2);
+    }
+
+    @Test
+    void getUserBookings_ShouldApplyPagination() {
+        // Создаем пользователей
+        UserDto owner = UserDto.builder()
+                .name("Владелец")
+                .email("owner2@email.com")
+                .build();
+        Long ownerId = userService.createUser(owner).getId();
+
+        UserDto booker = UserDto.builder()
+                .name("Бронирующий")
+                .email("booker2@email.com")
+                .build();
+        Long bookerId = userService.createUser(booker).getId();
+
+        // Создаем вещь
+        ItemDto item = ItemDto.builder()
+                .name("item1")
+                .description("item 1")
+                .available(true)
+                .build();
+        Long itemId = itemService.createItem(item, ownerId).getId();
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // 10 бронирований с разными датами
+        List<Long> bookingIds = new ArrayList<>();
+        for (int i = 1; i <= 10; i++) {
+            BookingDto bookingDto = BookingDto.builder()
+                    .itemId(itemId)
+                    .start(now.plusDays(i))  // i=1: +1 день, i=2: +2 дня и т.д.
+                    .end(now.plusDays(i + 1))
+                    .build();
+
+            BookingResponseDto createdBooking = bookingService.createBooking(bookingDto, bookerId);
+            bookingIds.add(createdBooking.getId());
+        }
+
+        List<BookingResponseDto> result1 = bookingService.getUserBookings(bookerId, "ALL", 2, 3);
+
+        assertThat(result1).hasSize(3);
+        assertThat(result1.get(0).getId()).isEqualTo(bookingIds.get(7)); // 8-й созданный (индекс 7)
+        assertThat(result1.get(1).getId()).isEqualTo(bookingIds.get(6)); // 7-й созданный (индекс 6)
+        assertThat(result1.get(2).getId()).isEqualTo(bookingIds.get(5)); // 6-й созданный (индекс 5)
+
+        List<BookingResponseDto> result2 = bookingService.getUserBookings(bookerId, "ALL", 0, 3);
+
+        assertThat(result2).hasSize(3);
+        assertThat(result2.get(0).getId()).isEqualTo(bookingIds.get(9)); // 10-й созданный
+        assertThat(result2.get(1).getId()).isEqualTo(bookingIds.get(8)); // 9-й созданный
+        assertThat(result2.get(2).getId()).isEqualTo(bookingIds.get(7)); // 8-й созданный
+
+        List<BookingResponseDto> result3 = bookingService.getUserBookings(bookerId, "ALL", 9, 3);
+
+        assertThat(result3).hasSize(1);
+        assertThat(result3.get(0).getId()).isEqualTo(bookingIds.get(0)); // 1-й созданный
     }
 }

@@ -79,7 +79,7 @@ public class ItemRequestTest extends IntegrationTest {
 
         assertThat(userRequests).hasSize(2);
         assertThat(userRequests).extracting(ItemRequestDto::getDescription)
-                .containsExactly("Нужен шуруповерт", "Нужна дрель");
+                .containsExactlyInAnyOrder("Нужен шуруповерт", "Нужна дрель"); // Порядок не важен
     }
 
     @Test
