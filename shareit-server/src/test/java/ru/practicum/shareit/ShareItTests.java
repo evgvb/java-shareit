@@ -1,7 +1,6 @@
 package ru.practicum.shareit;
 
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
@@ -21,14 +20,12 @@ class ShareItTests {
 
 	@Test
 	void contextLoads() {
-		//System.out.println("Spring контекст успешно загружен!");
 		log.info("Spring контекст успешно загружен!");
 	}
 
 	@Test
 	void mainMethodStarts() {
 		ShareItServer.main(new String[] {});
-		//System.out.println("Приложение успешно запущено!");
 		log.info("Приложение успешно запущено!");
 	}
 
@@ -43,8 +40,6 @@ class ShareItTests {
 		try (Connection connection = dataSource.getConnection()) {
 			assertThat(connection).isNotNull();
 			assertThat(connection.isValid(1)).isTrue();
-			//System.out.println("Подключение к базе данных успешно!");
-			//System.out.println("База данных: " + connection.getMetaData().getDatabaseProductName());
 			log.info("Подключение к базе данных успешно!");
 			log.info("База данных: " + connection.getMetaData().getDatabaseProductName());
 		}
@@ -54,7 +49,6 @@ class ShareItTests {
 	public void testJdbcTemplate() {
 		Integer result = jdbcTemplate.queryForObject("SELECT 1", Integer.class);
 		assertThat(result).isEqualTo(1);
-		//System.out.println("JdbcTemplate работает!");
 		log.info("JdbcTemplate работает!");
 	}
 }
