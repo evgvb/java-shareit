@@ -17,6 +17,7 @@ import java.util.*;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -47,6 +48,56 @@ class UserServiceImplTest {
     }
 
     @Test
+    void createUser_ShouldSaveAndReturnUser() {
+        when(userRepository.existsByEmailIgnoreCase("john@example.com")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenReturn(user);
+
+        UserDto result = userService.createUser(userDto);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+        assertThat(result.getName()).isEqualTo("John Doe");
+        assertThat(result.getEmail()).isEqualTo("john@example.com");
+
+        verify(userRepository, times(1)).existsByEmailIgnoreCase("john@example.com");
+        verify(userRepository, times(1)).save(any(User.class));
+    }
+
+    @Test
+    void createUser_ShouldThrowException_WhenEmailAlreadyExists() {
+        when(userRepository.existsByEmailIgnoreCase("john@example.com")).thenReturn(true);
+
+        assertThatThrownBy(() -> userService.createUser(userDto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("уже используется");
+
+        verify(userRepository, times(1)).existsByEmailIgnoreCase("john@example.com");
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void createUser_ShouldPreserveEmailCase() {
+        UserDto userDtoWithCase = UserDto.builder()
+                .name("John Doe")
+                .email("JOHN@EXAMPLE.COM")
+                .build();
+
+        User userWithCase = User.builder()
+                .id(1L)
+                .name("John Doe")
+                .email("JOHN@EXAMPLE.COM")
+                .build();
+
+        when(userRepository.existsByEmailIgnoreCase("JOHN@EXAMPLE.COM")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenReturn(userWithCase);
+
+        UserDto result = userService.createUser(userDtoWithCase);
+
+        assertThat(result.getEmail()).isEqualTo("JOHN@EXAMPLE.COM");
+        verify(userRepository).existsByEmailIgnoreCase("JOHN@EXAMPLE.COM");
+    }
+
+    @Test
     void updateUser_ShouldUpdateNameOnly() {
         UpdateUserDto updates = UpdateUserDto.builder()
                 .name("Jane Doe")
@@ -62,7 +113,7 @@ class UserServiceImplTest {
 
         verify(userRepository, times(1)).findById(1L);
         verify(userRepository, times(1)).save(any(User.class));
-        verify(userRepository, never()).existsByEmail(anyString());
+        verify(userRepository, never()).existsByEmailIgnoreCase(anyString());
     }
 
     @Test
@@ -72,7 +123,7 @@ class UserServiceImplTest {
                 .build();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("new@example.com")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
         UserDto result = userService.updateUser(1L, updates);
@@ -80,7 +131,7 @@ class UserServiceImplTest {
         assertThat(result.getName()).isEqualTo("John Doe");
         assertThat(result.getEmail()).isEqualTo("new@example.com");
 
-        verify(userRepository, times(1)).existsByEmail("new@example.com");
+        verify(userRepository, times(1)).existsByEmailIgnoreCase("new@example.com");
     }
 
     @Test
@@ -94,7 +145,7 @@ class UserServiceImplTest {
 
         userService.updateUser(1L, updates);
 
-        verify(userRepository, never()).existsByEmail(anyString());
+        verify(userRepository, never()).existsByEmailIgnoreCase(anyString());
     }
 
     @Test
@@ -104,12 +155,112 @@ class UserServiceImplTest {
                 .build();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmail("existing@example.com")).thenReturn(true);
+        when(userRepository.existsByEmailIgnoreCase("existing@example.com")).thenReturn(true);
 
         assertThatThrownBy(() -> userService.updateUser(1L, updates))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("уже используется");
 
         verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void updateUser_ShouldPreserveEmailCase_WhenUpdatingEmail() {
+        User user = User.builder()
+                .id(1L)
+                .name("John Doe")
+                .email("john@example.com")
+                .build();
+
+        UpdateUserDto updates = UpdateUserDto.builder()
+                .email("JOHN.NEW@EXAMPLE.COM")
+                .build();
+
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        when(userRepository.existsByEmailIgnoreCase("JOHN.NEW@EXAMPLE.COM")).thenReturn(false);
+        when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
+
+        UserDto result = userService.updateUser(1L, updates);
+
+        assertThat(result.getEmail()).isEqualTo("JOHN.NEW@EXAMPLE.COM");
+        verify(userRepository).existsByEmailIgnoreCase("JOHN.NEW@EXAMPLE.COM");
+    }
+
+    @Test
+    void updateUser_ShouldThrowException_WhenUserNotFound() {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.updateUser(999L, UpdateUserDto.builder().name("new").build()))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessageContaining("не найден");
+
+        verify(userRepository, never()).save(any(User.class));
+    }
+
+    @Test
+    void getUserById_ShouldReturnUser_WhenExists() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+
+        UserDto result = userService.getUserById(1L);
+
+        assertThat(result).isNotNull();
+        assertThat(result.getId()).isEqualTo(1L);
+
+        verify(userRepository, times(1)).findById(1L);
+    }
+
+    @Test
+    void getUserById_ShouldThrowException_WhenNotExists() {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.getUserById(999L))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessageContaining("не найден");
+    }
+
+    @Test
+    void getAllUsers_ShouldReturnList() {
+        User user2 = User.builder().id(2L).name("Jane").email("jane@example.com").build();
+        List<User> users = Arrays.asList(user, user2);
+
+        when(userRepository.findAll()).thenReturn(users);
+
+        List<UserDto> result = userService.getAllUsers();
+
+        assertThat(result).hasSize(2);
+        assertThat(result).extracting(UserDto::getId).containsExactly(1L, 2L);
+
+        verify(userRepository, times(1)).findAll();
+    }
+
+    @Test
+    void getAllUsers_ShouldReturnEmptyList_WhenNoUsers() {
+        when(userRepository.findAll()).thenReturn(List.of());
+
+        List<UserDto> result = userService.getAllUsers();
+
+        assertThat(result).isEmpty();
+    }
+
+    @Test
+    void deleteUser_ShouldDelete_WhenUserExists() {
+        when(userRepository.findById(1L)).thenReturn(Optional.of(user));
+        doNothing().when(userRepository).deleteById(1L);
+
+        userService.deleteUser(1L);
+
+        verify(userRepository, times(1)).findById(1L);
+        verify(userRepository, times(1)).deleteById(1L);
+    }
+
+    @Test
+    void deleteUser_ShouldThrowException_WhenUserNotFound() {
+        when(userRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> userService.deleteUser(999L))
+                .isInstanceOf(NoSuchElementException.class)
+                .hasMessageContaining("не найден");
+
+        verify(userRepository, never()).deleteById(anyLong());
     }
 }
