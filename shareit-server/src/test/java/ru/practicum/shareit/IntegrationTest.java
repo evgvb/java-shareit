@@ -13,8 +13,8 @@ import ru.practicum.shareit.user.repository.UserRepository;
 
 @SpringBootTest
 @Transactional
-@TestPropertySource(locations = "classpath:application-test.properties")
-//@ActiveProfiles("test")
+//@TestPropertySource(locations = "classpath:application-test.properties")
+@ActiveProfiles("test")
 public abstract class IntegrationTest {
     @Autowired
     protected UserRepository userRepository;
