@@ -3,6 +3,7 @@ package ru.practicum.shareit;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
@@ -13,10 +14,10 @@ import java.sql.SQLException;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest
+@AutoConfigureTestDatabase
 class ShareItTests {
 
 	@Test
-	@Disabled("Временно отключено для прохождения CI/CD")
 	void contextLoads() {
 		System.out.println("Spring контекст успешно загружен!");
 	}
