@@ -1,14 +1,20 @@
 package ru.practicum.shareit;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.servlet.MockMvc;
+import ru.practicum.shareit.user.controller.UserController;
+import ru.practicum.shareit.user.dto.UpdateUserDto;
 import ru.practicum.shareit.user.dto.UserDto;
-import ru.practicum.shareit.user.model.User;
+import ru.practicum.shareit.user.service.UserService;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -17,23 +23,32 @@ import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
-class UserControllerTest extends BaseControllerTest {
+@WebMvcTest(UserController.class)
+class UserControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @Autowired
+    private ObjectMapper objectMapper;
+
+    @MockBean
+    private UserService userService;
 
     private UserDto userDto;
-    private User user;
+    private UpdateUserDto updateUserDto;
 
     @BeforeEach
     void setUp() {
-        user = User.builder()
+        userDto = UserDto.builder()
                 .id(1L)
                 .name("user1")
                 .email("user1@email.com")
                 .build();
 
-        userDto = UserDto.builder()
-                .id(1L)
-                .name("user1")
-                .email("user1@email.com")
+        updateUserDto = UpdateUserDto.builder()
+                .name("user2")
+                .email("user2@email.com")
                 .build();
     }
 
@@ -53,25 +68,145 @@ class UserControllerTest extends BaseControllerTest {
     }
 
     @Test
+    void createUser_ShouldReturn400_WhenEmailIsInvalid() throws Exception {
+        UserDto invalidUser = UserDto.builder()
+                .name("user1")
+                .email("invalid-email")
+                .build();
+
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidUser)))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, never()).createUser(any(UserDto.class));
+    }
+
+    @Test
+    void createUser_ShouldReturn400_WhenEmailIsBlank() throws Exception {
+        UserDto invalidUser = UserDto.builder()
+                .name("user1")
+                .email("   ")
+                .build();
+
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidUser)))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, never()).createUser(any(UserDto.class));
+    }
+
+    @Test
+    void createUser_ShouldReturn400_WhenNameIsBlank() throws Exception {
+        UserDto invalidUser = UserDto.builder()
+                .name("   ")
+                .email("user@email.com")
+                .build();
+
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidUser)))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, never()).createUser(any(UserDto.class));
+    }
+
+    @Test
+    void createUser_ShouldReturn409_WhenEmailAlreadyExists() throws Exception {
+        when(userService.createUser(any(UserDto.class)))
+                .thenThrow(new IllegalArgumentException("Email уже используется"));
+
+        mockMvc.perform(post("/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDto)))
+                .andExpect(status().isConflict());
+
+        verify(userService, times(1)).createUser(any(UserDto.class));
+    }
+
+    @Test
     void updateUser_ShouldReturnUpdatedUser() throws Exception {
-        Map<String, Object> updates = Map.of("name", "user2");
         UserDto updatedDto = UserDto.builder()
                 .id(1L)
                 .name("user2")
                 .email("user2@email.com")
                 .build();
 
-        when(userService.updateUser(eq(1L), any(Map.class))).thenReturn(updatedDto);
+        when(userService.updateUser(eq(1L), any(UpdateUserDto.class))).thenReturn(updatedDto);
 
         mockMvc.perform(patch("/users/1")
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(updates)))
+                        .content(objectMapper.writeValueAsString(updateUserDto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").value(1))
                 .andExpect(jsonPath("$.name").value("user2"))
                 .andExpect(jsonPath("$.email").value("user2@email.com"));
 
-        verify(userService, times(1)).updateUser(eq(1L), any(Map.class));
+        verify(userService, times(1)).updateUser(eq(1L), any(UpdateUserDto.class));
+    }
+
+    @Test
+    void updateUser_ShouldReturn400_WhenEmailIsInvalid() throws Exception {
+        UpdateUserDto invalidUpdate = UpdateUserDto.builder()
+                .email("invalid-email")
+                .build();
+
+        mockMvc.perform(patch("/users/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalidUpdate)))
+                .andExpect(status().isBadRequest());
+
+        verify(userService, never()).updateUser(anyLong(), any(UpdateUserDto.class));
+    }
+
+    @Test
+    void updateUser_ShouldReturn404_WhenUserNotFound() throws Exception {
+        when(userService.updateUser(eq(999L), any(UpdateUserDto.class)))
+                .thenThrow(new NoSuchElementException("Пользователь не найден"));
+
+        mockMvc.perform(patch("/users/999")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateUserDto)))
+                .andExpect(status().isNotFound());
+
+        verify(userService, times(1)).updateUser(eq(999L), any(UpdateUserDto.class));
+    }
+
+    @Test
+    void updateUser_ShouldReturn409_WhenEmailAlreadyExists() throws Exception {
+        when(userService.updateUser(eq(1L), any(UpdateUserDto.class)))
+                .thenThrow(new IllegalArgumentException("Email уже используется"));
+
+        mockMvc.perform(patch("/users/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateUserDto)))
+                .andExpect(status().isConflict());
+
+        verify(userService, times(1)).updateUser(eq(1L), any(UpdateUserDto.class));
+    }
+
+    @Test
+    void updateUser_WithEmptyName_ShouldWork() throws Exception {
+        UpdateUserDto updateWithEmptyName = UpdateUserDto.builder()
+                .email("new@email.com")
+                .build();
+
+        UserDto updatedDto = UserDto.builder()
+                .id(1L)
+                .name("user1")
+                .email("new@email.com")
+                .build();
+
+        when(userService.updateUser(eq(1L), any(UpdateUserDto.class))).thenReturn(updatedDto);
+
+        mockMvc.perform(patch("/users/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(updateWithEmptyName)))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("new@email.com"));
+
+        verify(userService, times(1)).updateUser(eq(1L), any(UpdateUserDto.class));
     }
 
     @Test

@@ -2,17 +2,18 @@ package ru.practicum.shareit;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import ru.practicum.shareit.user.dto.UpdateUserDto;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class UserTest extends IntegrationTest {
+
     @Autowired
     private UserService userService;
 
@@ -35,7 +36,6 @@ public class UserTest extends IntegrationTest {
 
     @Test
     void createUser_ShouldThrowException_WhenEmailIsDuplicate() {
-
         UserDto userDto1 = UserDto.builder()
                 .name("Иван Петров")
                 .email("duplicate@example.com")
@@ -78,7 +78,6 @@ public class UserTest extends IntegrationTest {
 
     @Test
     void updateUser_ShouldUpdateName_WhenOnlyNameProvided() {
-
         UserDto userDto = UserDto.builder()
                 .name("Алексей Алексеев")
                 .email("alexey@example.com")
@@ -86,7 +85,10 @@ public class UserTest extends IntegrationTest {
 
         UserDto savedUser = userService.createUser(userDto);
 
-        Map<String, Object> updates = Map.of("name", "Алексей Обновленный");
+        UpdateUserDto updates = UpdateUserDto.builder()
+                .name("Алексей Обновленный")
+                .build();
+
         UserDto updatedUser = userService.updateUser(savedUser.getId(), updates);
 
         assertThat(updatedUser.getId()).isEqualTo(savedUser.getId());
@@ -96,7 +98,6 @@ public class UserTest extends IntegrationTest {
 
     @Test
     void updateUser_ShouldUpdateEmail_WhenOnlyEmailProvided() {
-        // Подготовка
         UserDto userDto = UserDto.builder()
                 .name("Елена Смирнова")
                 .email("elena@example.com")
@@ -104,7 +105,10 @@ public class UserTest extends IntegrationTest {
 
         UserDto savedUser = userService.createUser(userDto);
 
-        Map<String, Object> updates = Map.of("email", "elena.new@example.com");
+        UpdateUserDto updates = UpdateUserDto.builder()
+                .email("elena.new@example.com")
+                .build();
+
         UserDto updatedUser = userService.updateUser(savedUser.getId(), updates);
 
         assertThat(updatedUser.getId()).isEqualTo(savedUser.getId());
@@ -113,8 +117,31 @@ public class UserTest extends IntegrationTest {
     }
 
     @Test
-    void getAllUsers_ShouldReturnAllUsers() {
+    void updateUser_ShouldThrowException_WhenEmailAlreadyExists() {
+        UserDto user1 = UserDto.builder()
+                .name("User 1")
+                .email("user1@test.com")
+                .build();
 
+        UserDto user2 = UserDto.builder()
+                .name("User 2")
+                .email("user2@test.com")
+                .build();
+
+        userService.createUser(user1);
+        UserDto savedUser2 = userService.createUser(user2);
+
+        UpdateUserDto updates = UpdateUserDto.builder()
+                .email("user1@test.com") // Пытаемся установить email первого пользователя
+                .build();
+
+        assertThatThrownBy(() -> userService.updateUser(savedUser2.getId(), updates))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("уже используется");
+    }
+
+    @Test
+    void getAllUsers_ShouldReturnAllUsers() {
         UserDto user1 = UserDto.builder().name("User 1").email("user1@test.com").build();
         UserDto user2 = UserDto.builder().name("User 2").email("user2@test.com").build();
         UserDto user3 = UserDto.builder().name("User 3").email("user3@test.com").build();
@@ -132,7 +159,6 @@ public class UserTest extends IntegrationTest {
 
     @Test
     void deleteUser_ShouldRemoveUser_WhenUserExists() {
-
         UserDto userDto = UserDto.builder()
                 .name("Для удаления")
                 .email("delete@test.com")

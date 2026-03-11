@@ -4,13 +4,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.user.dto.UpdateUserDto;
 import ru.practicum.shareit.user.dto.UserDto;
 import ru.practicum.shareit.user.mapper.UserMapper;
 import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.List;
-import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
@@ -27,7 +27,7 @@ public class UserServiceImpl implements UserService {
     public UserDto createUser(UserDto userDto) {
         log.info("Создание нового пользователя: {}", userDto.getEmail());
 
-        verificationUserMail(userDto.getEmail().toLowerCase());
+        verificationUserMail(userDto.getEmail());
 
         User user = UserMapper.toUser(userDto);
         User savedUser = userRepository.save(user);
@@ -38,22 +38,26 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public UserDto updateUser(Long userId, Map<String, Object> updates) {
+    public UserDto updateUser(Long userId, UpdateUserDto updates) {
         log.info("Обновление пользователя с ID: {}", userId);
 
         User existingUser = findUserById(userId);
 
-        if (updates.containsKey("email") && updates.get("email") != null) {
-            String newEmail = updates.get("email").toString().toLowerCase();
-            String oldEmail = existingUser.getEmail().toLowerCase();
+        if (updates.getEmail() != null) {
+            String newEmail = updates.getEmail(); // Не меняем регистр
+            String oldEmail = existingUser.getEmail();
 
-            if (!oldEmail.equals(newEmail)) {
+            if (!oldEmail.equalsIgnoreCase(newEmail)) {
                 verificationUserMail(newEmail);
             }
+            existingUser.setEmail(newEmail); // Сохраняем оригинальный регистр
         }
 
-        User updatedUser = UserMapper.updateFromMap(existingUser, updates);
-        User savedUser = userRepository.save(updatedUser);
+        if (updates.getName() != null && !updates.getName().isBlank()) {
+            existingUser.setName(updates.getName());
+        }
+
+        User savedUser = userRepository.save(existingUser);
 
         log.info("Пользователь с ID {} обновлен", userId);
         return UserMapper.toUserDto(savedUser);
@@ -89,12 +93,13 @@ public class UserServiceImpl implements UserService {
     }
 
     private void verificationUserMail(String email) {
-        if (userRepository.existsByEmail(email)) {
+        if (userRepository.existsByEmailIgnoreCase(email)) {
             throw new IllegalArgumentException("Email " + email + " уже используется другим пользователем");
         }
     }
 
     private User findUserById(Long userId) {
-        return userRepository.findById(userId).orElseThrow(() -> new NoSuchElementException("Пользователь с ID " + userId + " не найден"));
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new NoSuchElementException("Пользователь с ID " + userId + " не найден"));
     }
 }
