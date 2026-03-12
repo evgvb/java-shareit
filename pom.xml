@@ -55,7 +55,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-checkstyle-plugin</artifactId>
-					<version>3.1.2</version>
+					<version>3.3.0</version>
 					<configuration>
 						<configLocation>checkstyle.xml</configLocation>
 						<failOnViolation>true</failOnViolation>
@@ -74,6 +74,7 @@
 						<dependency>
 							<groupId>com.puppycrawl.tools</groupId>
 							<artifactId>checkstyle</artifactId>
+							<version>10.12.0</version>
 						</dependency>
 					</dependencies>
 				</plugin>
@@ -143,8 +144,8 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-checkstyle-plugin</artifactId>
+						<version>3.2.2</version>  <!-- ДОБАВЛЕНА ВЕРСИЯ -->
 					</plugin>
-
 				</plugins>
 			</build>
 		</profile>
