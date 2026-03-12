@@ -21,8 +21,8 @@
 	</properties>
 
 	<modules>
-		<module>shareit-gateway</module>
-		<module>shareit-server</module>
+		<module>gateway</module>
+		<module>server</module>
 	</modules>
 
 	<build>
@@ -74,7 +74,6 @@
 						<dependency>
 							<groupId>com.puppycrawl.tools</groupId>
 							<artifactId>checkstyle</artifactId>
-							<version>10.3</version>
 						</dependency>
 					</dependencies>
 				</plugin>
