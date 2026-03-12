@@ -68,4 +68,14 @@ public class GlobalExceptionHandler {
         error.put("message", ex.getMessage());
         return error;
     }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    @ResponseStatus(HttpStatus.FORBIDDEN)
+    public Map<String, String> handleAccessDenied(AccessDeniedException ex) {
+        log.error("Доступ запрещен: {}", ex.getMessage());
+        Map<String, String> error = new HashMap<>();
+        error.put("error", "Доступ запрещен");
+        error.put("message", ex.getMessage());
+        return error;
+    }
 }

@@ -183,15 +183,15 @@ public class BookingTest extends IntegrationTest {
 
         BookingResponseDto createdBooking = bookingService.createBooking(bookingDto, bookerId);
 
-        UserDto stranger = UserDto.builder()
-                .name("Чужой")
-                .email("stranger@test.com")
+        UserDto user = UserDto.builder()
+                .name("user")
+                .email("user@email.com")
                 .build();
 
-        UserDto savedStranger = userService.createUser(stranger);
+        UserDto savedUser = userService.createUser(user);
 
         assertThatThrownBy(() -> bookingService.approveBooking(
-                createdBooking.getId(), true, savedStranger.getId()))
+                createdBooking.getId(), true, savedUser.getId()))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("не является владельцем");
     }
@@ -261,15 +261,15 @@ public class BookingTest extends IntegrationTest {
 
         BookingResponseDto createdBooking = bookingService.createBooking(bookingDto, bookerId);
 
-        UserDto stranger = UserDto.builder()
-                .name("Чужой")
-                .email("stranger@test.com")
+        UserDto user = UserDto.builder()
+                .name("user")
+                .email("user@email.com")
                 .build();
 
-        UserDto savedStranger = userService.createUser(stranger);
+        UserDto savedUser = userService.createUser(user);
 
         assertThatThrownBy(() -> bookingService.getBookingById(
-                createdBooking.getId(), savedStranger.getId()))
+                createdBooking.getId(), savedUser.getId()))
                 .isInstanceOf(AccessDeniedException.class)
                 .hasMessageContaining("не имеет прав");
     }

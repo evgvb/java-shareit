@@ -3,24 +3,30 @@ package ru.practicum.shareit;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
-import org.springframework.boot.test.context.TestConfiguration;
 import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.context.annotation.Bean;
 import org.springframework.http.MediaType;
+import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import ru.practicum.shareit.booking.service.BookingService;
+import ru.practicum.shareit.exception.AccessDeniedException;
+import ru.practicum.shareit.exception.GlobalExceptionHandler;
 import ru.practicum.shareit.exception.ValidationException;
+import ru.practicum.shareit.item.service.ItemService;
+import ru.practicum.shareit.request.service.ItemRequestService;
 import ru.practicum.shareit.user.service.UserService;
 
 import java.util.NoSuchElementException;
 
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@WebMvcTest(controllers = GlobalExceptionHandlerTest.TestController.class)
+@WebMvcTest
+@ContextConfiguration(classes = {
+        GlobalExceptionHandlerTest.TestController.class,
+        GlobalExceptionHandler.class
+})
 class GlobalExceptionHandlerTest {
 
     @Autowired
@@ -29,17 +35,19 @@ class GlobalExceptionHandlerTest {
     @MockBean
     private UserService userService;
 
-    @TestConfiguration
-    static class TestConfig {
-        @Bean
-        public TestController testController() {
-            return new TestController();
-        }
-    }
+    @MockBean
+    private BookingService bookingService;
+
+    @MockBean
+    private ItemService itemService;
+
+    @MockBean
+    private ItemRequestService itemRequestService;
 
     @RestController
     @RequestMapping("/test")
     static class TestController {
+
         @GetMapping("/not-found")
         public String throwNotFound() {
             throw new NoSuchElementException("Resource not found");
@@ -53,6 +61,31 @@ class GlobalExceptionHandlerTest {
         @GetMapping("/illegal-argument")
         public String throwIllegalArgument() {
             throw new IllegalArgumentException("Illegal argument");
+        }
+
+        @GetMapping("/access-denied")
+        public String throwAccessDenied() {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        @DeleteMapping("/access-denied")
+        public String throwAccessDeniedDelete() {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        @PostMapping("/access-denied")
+        public String throwAccessDeniedPost() {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        @PutMapping("/access-denied")
+        public String throwAccessDeniedPut() {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        @PatchMapping("/access-denied")
+        public String throwAccessDeniedPatch() {
+            throw new AccessDeniedException("Access denied");
         }
 
         @GetMapping("/generic-error")
@@ -71,7 +104,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleValidation_ShouldReturn400() throws Exception {
+    void handleValidationException_ShouldReturn400() throws Exception {
         mockMvc.perform(get("/test/validation-error")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
@@ -80,7 +113,7 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleIllegalArgument_ShouldReturn409() throws Exception {
+    void handleIllegalArgumentException_ShouldReturn409() throws Exception {
         mockMvc.perform(get("/test/illegal-argument")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isConflict())
@@ -89,7 +122,55 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
-    void handleAllExceptions_ShouldReturn500() throws Exception {
+    void handleAccessDeniedException_OnGetRequest_ShouldReturn403() throws Exception {
+        mockMvc.perform(get("/test/access-denied")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Доступ запрещен"))
+                .andExpect(jsonPath("$.message").value("Access denied"));
+    }
+
+    @Test
+    void handleAccessDeniedException_OnPostRequest_ShouldReturn403() throws Exception {
+        mockMvc.perform(post("/test/access-denied")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Доступ запрещен"))
+                .andExpect(jsonPath("$.message").value("Access denied"));
+    }
+
+    @Test
+    void handleAccessDeniedException_OnPutRequest_ShouldReturn403() throws Exception {
+        mockMvc.perform(put("/test/access-denied")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Доступ запрещен"))
+                .andExpect(jsonPath("$.message").value("Access denied"));
+    }
+
+    @Test
+    void handleAccessDeniedException_OnPatchRequest_ShouldReturn403() throws Exception {
+        mockMvc.perform(patch("/test/access-denied")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{}"))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Доступ запрещен"))
+                .andExpect(jsonPath("$.message").value("Access denied"));
+    }
+
+    @Test
+    void handleAccessDeniedException_OnDeleteRequest_ShouldReturn403() throws Exception {
+        mockMvc.perform(delete("/test/access-denied")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.error").value("Доступ запрещен"))
+                .andExpect(jsonPath("$.message").value("Access denied"));
+    }
+
+    @Test
+    void handleGenericException_ShouldReturn500() throws Exception {
         mockMvc.perform(get("/test/generic-error")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isInternalServerError())
