@@ -91,7 +91,7 @@ public class BookingServiceTest {
     }
 
     @Test
-    void createBooking_WhenItemNotAvailable_ShouldThrowValidationException() {
+    void createBooking_ShouldThrowValidationException_WhenItemNotAvailable() {
         item.setAvailable(false);
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(booker));
         when(itemRepository.findById(anyLong())).thenReturn(Optional.of(item));
@@ -102,7 +102,7 @@ public class BookingServiceTest {
     }
 
     @Test
-    void createBooking_WhenOwnerTriesToBookOwnItem_ShouldThrowNoSuchElementException() {
+    void createBooking_ShouldThrowNoSuchElementException_WhenOwnerTriesToBookOwnItem() {
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(owner));
         when(itemRepository.findById(anyLong())).thenReturn(Optional.of(item));
 
@@ -112,7 +112,7 @@ public class BookingServiceTest {
     }
 
     @Test
-    void createBooking_WhenEndDateBeforeStart_ShouldThrowValidationException() {
+    void createBooking_ShouldThrowValidationException_WhenEndDateBeforeStart() {
         bookingDto.setEnd(now.minusDays(1));
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(booker));
         when(itemRepository.findById(anyLong())).thenReturn(Optional.of(item));
@@ -123,7 +123,7 @@ public class BookingServiceTest {
     }
 
     @Test
-    void createBooking_WhenEndDateEqualsStart_ShouldThrowValidationException() {
+    void createBooking_ShouldThrowValidationException_WhenEndDateEqualsStart() {
         bookingDto.setEnd(bookingDto.getStart());
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(booker));
         when(itemRepository.findById(anyLong())).thenReturn(Optional.of(item));
@@ -134,7 +134,7 @@ public class BookingServiceTest {
     }
 
     @Test
-    void approveBooking_WhenUserNotOwner_ShouldThrowAccessDeniedException() {
+    void approveBooking_ShouldThrowAccessDeniedException_WhenUserNotOwner() {
         when(bookingRepository.findById(anyLong())).thenReturn(Optional.of(booking));
 
         assertThatThrownBy(() -> bookingService.approveBooking(1L, true, 999L))
@@ -143,7 +143,7 @@ public class BookingServiceTest {
     }
 
     @Test
-    void approveBooking_WhenBookingNotWaiting_ShouldThrowValidationException() {
+    void approveBooking_ShouldThrowValidationException_WhenBookingNotWaiting() {
         booking.setStatus(BookingStatus.APPROVED);
         when(bookingRepository.findById(anyLong())).thenReturn(Optional.of(booking));
 
@@ -153,7 +153,7 @@ public class BookingServiceTest {
     }
 
     @Test
-    void approveBooking_WhenApproved_ShouldSetStatusApproved() {
+    void approveBooking_ShouldSetStatusApproved_WhenApproved() {
         when(bookingRepository.findById(anyLong())).thenReturn(Optional.of(booking));
         when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
 
@@ -165,7 +165,7 @@ public class BookingServiceTest {
     }
 
     @Test
-    void approveBooking_WhenRejected_ShouldSetStatusRejected() {
+    void approveBooking_ShouldSetStatusRejected_WhenRejected() {
         when(bookingRepository.findById(anyLong())).thenReturn(Optional.of(booking));
         when(bookingRepository.save(any(Booking.class))).thenReturn(booking);
 
@@ -177,7 +177,7 @@ public class BookingServiceTest {
     }
 
     @Test
-    void getBookingById_WhenUserNotAuthorOrOwner_ShouldThrowAccessDeniedException() {
+    void getBookingById_ShouldThrowAccessDeniedException_WhenUserNotAuthorOrOwner() {
         User stranger = User.builder().id(999L).build();
         when(bookingRepository.findById(anyLong())).thenReturn(Optional.of(booking));
 
@@ -187,28 +187,28 @@ public class BookingServiceTest {
     }
 
     @Test
-    void getUserBookings_WithInvalidFromParameter_ShouldThrowValidationException() {
+    void getUserBookings_ShouldThrowValidationException_WithInvalidFromParameter() {
         assertThatThrownBy(() -> bookingService.getUserBookings(1L, "ALL", -1, 10))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("from");
     }
 
     @Test
-    void getUserBookings_WithInvalidSizeParameter_ShouldThrowValidationException() {
+    void getUserBookings_ShouldThrowValidationException_WithInvalidSizeParameter() {
         assertThatThrownBy(() -> bookingService.getUserBookings(1L, "ALL", 0, 0))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("size");
     }
 
     @Test
-    void getUserBookings_WithInvalidState_ShouldThrowValidationException() {
+    void getUserBookings_ShouldThrowValidationException_WithInvalidState() {
         assertThatThrownBy(() -> bookingService.getUserBookings(1L, "INVALID_STATE", 0, 10))
                 .isInstanceOf(ValidationException.class)
                 .hasMessageContaining("не определен");
     }
 
     @Test
-    void getOwnerBookings_WhenUserNotFound_ShouldThrowNoSuchElementException() {
+    void getOwnerBookings_ShouldThrowNoSuchElementException_WhenUserNotFound() {
         when(userRepository.existsById(anyLong())).thenReturn(false);
 
         assertThatThrownBy(() -> bookingService.getOwnerBookings(999L, "ALL", 0, 10))

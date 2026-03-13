@@ -52,13 +52,6 @@ public class BookingServiceImpl implements BookingService {
             throw new NoSuchElementException("Владелец не может забронировать свою вещь");
         }
 
-        // Добавляем небольшую погрешность в 1 секунду для учета времени выполнения
-        LocalDateTime now = LocalDateTime.now().minusSeconds(1);
-
-        if (bookingDto.getStart().isBefore(now)) {
-            throw new ValidationException("Дата начала должна быть в настоящем или будущем");
-        }
-
         if (bookingDto.getEnd().isBefore(bookingDto.getStart()) ||
                 bookingDto.getEnd().isEqual(bookingDto.getStart())) {
             throw new ValidationException("Дата окончания должна быть больше даты начала");
