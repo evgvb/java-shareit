@@ -22,8 +22,8 @@ class UserRepositoryTest extends RepositoryTest {
     @BeforeEach
     void setUp() {
         user = User.builder()
-                .name("John Doe")
-                .email("john@example.com")
+                .name("user1")
+                .email("user1@email.com")
                 .build();
     }
 
@@ -31,14 +31,14 @@ class UserRepositoryTest extends RepositoryTest {
     void existsByEmailIgnoreCase_whenEmailExists_shouldReturnTrue() {
         em.persist(user);
 
-        boolean exists = userRepository.existsByEmailIgnoreCase("JOHN@EXAMPLE.COM");
+        boolean exists = userRepository.existsByEmailIgnoreCase("USER1@EMAIL.COM");
 
         assertThat(exists).isTrue();
     }
 
     @Test
     void existsByEmailIgnoreCase_whenEmailNotExists_shouldReturnFalse() {
-        boolean exists = userRepository.existsByEmailIgnoreCase("none@example.com");
+        boolean exists = userRepository.existsByEmailIgnoreCase("none@EMAIL.com");
 
         assertThat(exists).isFalse();
     }
@@ -48,8 +48,8 @@ class UserRepositoryTest extends RepositoryTest {
         User saved = userRepository.save(user);
 
         assertThat(saved.getId()).isNotNull();
-        assertThat(saved.getName()).isEqualTo("John Doe");
-        assertThat(saved.getEmail()).isEqualTo("john@example.com");
+        assertThat(saved.getName()).isEqualTo("user1");
+        assertThat(saved.getEmail()).isEqualTo("user1@email.com");
     }
 
     @Test
@@ -67,8 +67,8 @@ class UserRepositoryTest extends RepositoryTest {
         em.persist(user);
 
         User user2 = User.builder()
-                .name("Jane Doe")
-                .email("jane@example.com")
+                .name("user2")
+                .email("user2@email.com")
                 .build();
         em.persist(user2);
 

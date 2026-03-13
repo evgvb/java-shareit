@@ -21,14 +21,14 @@ public class UserTest extends IntegrationTest {
     void createUser_ShouldSaveUser_WhenDataIsValid() {
         UserDto userDto = UserDto.builder()
                 .name("Иван Петров")
-                .email("ivan@example.com")
+                .email("ivan@email.com")
                 .build();
 
         UserDto createdUser = userService.createUser(userDto);
 
         assertThat(createdUser.getId()).isNotNull();
         assertThat(createdUser.getName()).isEqualTo("Иван Петров");
-        assertThat(createdUser.getEmail()).isEqualTo("ivan@example.com");
+        assertThat(createdUser.getEmail()).isEqualTo("ivan@email.com");
 
         // Проверяем, что пользователь сохранился в БД
         assertThat(userRepository.findById(createdUser.getId())).isPresent();
@@ -38,12 +38,12 @@ public class UserTest extends IntegrationTest {
     void createUser_ShouldThrowException_WhenEmailIsDuplicate() {
         UserDto userDto1 = UserDto.builder()
                 .name("Иван Петров")
-                .email("duplicate@example.com")
+                .email("duplicate@email.com")
                 .build();
 
         UserDto userDto2 = UserDto.builder()
                 .name("Петр Иванов")
-                .email("duplicate@example.com")
+                .email("duplicate@email.com")
                 .build();
 
         userService.createUser(userDto1);
@@ -57,7 +57,7 @@ public class UserTest extends IntegrationTest {
     void getUserById_ShouldReturnUser_WhenUserExists() {
         UserDto userDto = UserDto.builder()
                 .name("Мария Сидорова")
-                .email("maria@example.com")
+                .email("maria@email.com")
                 .build();
 
         UserDto savedUser = userService.createUser(userDto);
@@ -66,7 +66,7 @@ public class UserTest extends IntegrationTest {
 
         assertThat(foundUser.getId()).isEqualTo(savedUser.getId());
         assertThat(foundUser.getName()).isEqualTo("Мария Сидорова");
-        assertThat(foundUser.getEmail()).isEqualTo("maria@example.com");
+        assertThat(foundUser.getEmail()).isEqualTo("maria@email.com");
     }
 
     @Test
@@ -80,7 +80,7 @@ public class UserTest extends IntegrationTest {
     void updateUser_ShouldUpdateName_WhenOnlyNameProvided() {
         UserDto userDto = UserDto.builder()
                 .name("Алексей Алексеев")
-                .email("alexey@example.com")
+                .email("alexey@email.com")
                 .build();
 
         UserDto savedUser = userService.createUser(userDto);
@@ -93,27 +93,27 @@ public class UserTest extends IntegrationTest {
 
         assertThat(updatedUser.getId()).isEqualTo(savedUser.getId());
         assertThat(updatedUser.getName()).isEqualTo("Алексей Обновленный");
-        assertThat(updatedUser.getEmail()).isEqualTo("alexey@example.com");
+        assertThat(updatedUser.getEmail()).isEqualTo("alexey@email.com");
     }
 
     @Test
     void updateUser_ShouldUpdateEmail_WhenOnlyEmailProvided() {
         UserDto userDto = UserDto.builder()
                 .name("Елена Смирнова")
-                .email("elena@example.com")
+                .email("elena@email.com")
                 .build();
 
         UserDto savedUser = userService.createUser(userDto);
 
         UpdateUserDto updates = UpdateUserDto.builder()
-                .email("elena.new@example.com")
+                .email("elena.new@email.com")
                 .build();
 
         UserDto updatedUser = userService.updateUser(savedUser.getId(), updates);
 
         assertThat(updatedUser.getId()).isEqualTo(savedUser.getId());
         assertThat(updatedUser.getName()).isEqualTo("Елена Смирнова");
-        assertThat(updatedUser.getEmail()).isEqualTo("elena.new@example.com");
+        assertThat(updatedUser.getEmail()).isEqualTo("elena.new@email.com");
     }
 
     @Test

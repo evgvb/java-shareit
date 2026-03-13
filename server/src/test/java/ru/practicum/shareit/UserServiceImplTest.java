@@ -37,19 +37,19 @@ class UserServiceImplTest {
         user = User.builder()
                 .id(1L)
                 .name("John Doe")
-                .email("john@example.com")
+                .email("john@email.com")
                 .build();
 
         userDto = UserDto.builder()
                 .id(1L)
                 .name("John Doe")
-                .email("john@example.com")
+                .email("john@email.com")
                 .build();
     }
 
     @Test
     void createUser_ShouldSaveAndReturnUser() {
-        when(userRepository.existsByEmailIgnoreCase("john@example.com")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("john@email.com")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenReturn(user);
 
         UserDto result = userService.createUser(userDto);
@@ -57,21 +57,21 @@ class UserServiceImplTest {
         assertThat(result).isNotNull();
         assertThat(result.getId()).isEqualTo(1L);
         assertThat(result.getName()).isEqualTo("John Doe");
-        assertThat(result.getEmail()).isEqualTo("john@example.com");
+        assertThat(result.getEmail()).isEqualTo("john@email.com");
 
-        verify(userRepository, times(1)).existsByEmailIgnoreCase("john@example.com");
+        verify(userRepository, times(1)).existsByEmailIgnoreCase("john@email.com");
         verify(userRepository, times(1)).save(any(User.class));
     }
 
     @Test
     void createUser_ShouldThrowException_WhenEmailAlreadyExists() {
-        when(userRepository.existsByEmailIgnoreCase("john@example.com")).thenReturn(true);
+        when(userRepository.existsByEmailIgnoreCase("john@email.com")).thenReturn(true);
 
         assertThatThrownBy(() -> userService.createUser(userDto))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("уже используется");
 
-        verify(userRepository, times(1)).existsByEmailIgnoreCase("john@example.com");
+        verify(userRepository, times(1)).existsByEmailIgnoreCase("john@email.com");
         verify(userRepository, never()).save(any(User.class));
     }
 
@@ -79,22 +79,22 @@ class UserServiceImplTest {
     void createUser_ShouldPreserveEmailCase() {
         UserDto userDtoWithCase = UserDto.builder()
                 .name("John Doe")
-                .email("JOHN@EXAMPLE.COM")
+                .email("JOHN@email.COM")
                 .build();
 
         User userWithCase = User.builder()
                 .id(1L)
                 .name("John Doe")
-                .email("JOHN@EXAMPLE.COM")
+                .email("JOHN@email.COM")
                 .build();
 
-        when(userRepository.existsByEmailIgnoreCase("JOHN@EXAMPLE.COM")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("JOHN@email.COM")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenReturn(userWithCase);
 
         UserDto result = userService.createUser(userDtoWithCase);
 
-        assertThat(result.getEmail()).isEqualTo("JOHN@EXAMPLE.COM");
-        verify(userRepository).existsByEmailIgnoreCase("JOHN@EXAMPLE.COM");
+        assertThat(result.getEmail()).isEqualTo("JOHN@email.COM");
+        verify(userRepository).existsByEmailIgnoreCase("JOHN@email.COM");
     }
 
     @Test
@@ -109,7 +109,7 @@ class UserServiceImplTest {
         UserDto result = userService.updateUser(1L, updates);
 
         assertThat(result.getName()).isEqualTo("Jane Doe");
-        assertThat(result.getEmail()).isEqualTo("john@example.com");
+        assertThat(result.getEmail()).isEqualTo("john@email.com");
 
         verify(userRepository, times(1)).findById(1L);
         verify(userRepository, times(1)).save(any(User.class));
@@ -119,25 +119,25 @@ class UserServiceImplTest {
     @Test
     void updateUser_ShouldUpdateEmail_WhenNewEmailIsUnique() {
         UpdateUserDto updates = UpdateUserDto.builder()
-                .email("new@example.com")
+                .email("new@email.com")
                 .build();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmailIgnoreCase("new@example.com")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("new@email.com")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
         UserDto result = userService.updateUser(1L, updates);
 
         assertThat(result.getName()).isEqualTo("John Doe");
-        assertThat(result.getEmail()).isEqualTo("new@example.com");
+        assertThat(result.getEmail()).isEqualTo("new@email.com");
 
-        verify(userRepository, times(1)).existsByEmailIgnoreCase("new@example.com");
+        verify(userRepository, times(1)).existsByEmailIgnoreCase("new@email.com");
     }
 
     @Test
     void updateUser_ShouldNotCheckEmailUniqueness_WhenEmailNotChanged() {
         UpdateUserDto updates = UpdateUserDto.builder()
-                .email("john@example.com")
+                .email("john@email.com")
                 .build();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
@@ -151,11 +151,11 @@ class UserServiceImplTest {
     @Test
     void updateUser_ShouldThrowException_WhenEmailAlreadyExists() {
         UpdateUserDto updates = UpdateUserDto.builder()
-                .email("existing@example.com")
+                .email("existing@email.com")
                 .build();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmailIgnoreCase("existing@example.com")).thenReturn(true);
+        when(userRepository.existsByEmailIgnoreCase("existing@email.com")).thenReturn(true);
 
         assertThatThrownBy(() -> userService.updateUser(1L, updates))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -169,21 +169,21 @@ class UserServiceImplTest {
         User user = User.builder()
                 .id(1L)
                 .name("John Doe")
-                .email("john@example.com")
+                .email("john@email.com")
                 .build();
 
         UpdateUserDto updates = UpdateUserDto.builder()
-                .email("JOHN.NEW@EXAMPLE.COM")
+                .email("JOHN.NEW@email.COM")
                 .build();
 
         when(userRepository.findById(1L)).thenReturn(Optional.of(user));
-        when(userRepository.existsByEmailIgnoreCase("JOHN.NEW@EXAMPLE.COM")).thenReturn(false);
+        when(userRepository.existsByEmailIgnoreCase("JOHN.NEW@email.COM")).thenReturn(false);
         when(userRepository.save(any(User.class))).thenAnswer(i -> i.getArgument(0));
 
         UserDto result = userService.updateUser(1L, updates);
 
-        assertThat(result.getEmail()).isEqualTo("JOHN.NEW@EXAMPLE.COM");
-        verify(userRepository).existsByEmailIgnoreCase("JOHN.NEW@EXAMPLE.COM");
+        assertThat(result.getEmail()).isEqualTo("JOHN.NEW@email.COM");
+        verify(userRepository).existsByEmailIgnoreCase("JOHN.NEW@email.COM");
     }
 
     @Test
@@ -220,7 +220,7 @@ class UserServiceImplTest {
 
     @Test
     void getAllUsers_ShouldReturnList() {
-        User user2 = User.builder().id(2L).name("Jane").email("jane@example.com").build();
+        User user2 = User.builder().id(2L).name("Jane").email("jane@email.com").build();
         List<User> users = Arrays.asList(user, user2);
 
         when(userRepository.findAll()).thenReturn(users);

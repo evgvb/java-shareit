@@ -67,13 +67,13 @@ public class ItemServiceTest {
         owner = User.builder()
                 .id(1L)
                 .name("Owner")
-                .email("owner@example.com")
+                .email("owner@email.com")
                 .build();
 
         booker = User.builder()
                 .id(2L)
                 .name("Booker")
-                .email("booker@example.com")
+                .email("booker@email.com")
                 .build();
 
         item = Item.builder()

@@ -25,8 +25,8 @@ class UserDtoTest {
     @Test
     void whenAllFieldsValidForCreate_thenNoViolations() {
         UserDto userDto = UserDto.builder()
-                .name("John Doe")
-                .email("john@example.com")
+                .name("user1")
+                .email("user1@email.com")
                 .build();
 
         Set<ConstraintViolation<UserDto>> violations = validator.validate(userDto, UserDto.Create.class);
@@ -37,7 +37,7 @@ class UserDtoTest {
     void whenNameBlankForCreate_thenViolations() {
         UserDto userDto = UserDto.builder()
                 .name("")
-                .email("john@example.com")
+                .email("user1@email.com")
                 .build();
 
         Set<ConstraintViolation<UserDto>> violations = validator.validate(userDto, UserDto.Create.class);
@@ -48,7 +48,7 @@ class UserDtoTest {
     @Test
     void whenEmailBlankForCreate_thenViolations() {
         UserDto userDto = UserDto.builder()
-                .name("John Doe")
+                .name("user1")
                 .email("")
                 .build();
 
@@ -60,7 +60,7 @@ class UserDtoTest {
     @Test
     void whenEmailInvalidForCreate_thenViolations() {
         UserDto userDto = UserDto.builder()
-                .name("John Doe")
+                .name("user1")
                 .email("invalid-email")
                 .build();
 

@@ -31,8 +31,8 @@ class UserControllerTest {
     @Test
     void createUser_whenValidData_thenStatusOk() throws Exception {
         UserDto userDto = UserDto.builder()
-                .name("John Doe")
-                .email("john@example.com")
+                .name("user1")
+                .email("user1@email.com")
                 .build();
 
         mockMvc.perform(post("/users")
@@ -44,7 +44,7 @@ class UserControllerTest {
     @Test
     void createUser_whenMissingName_thenStatusBadRequest() throws Exception {
         UserDto userDto = UserDto.builder()
-                .email("john@example.com")
+                .email("user1@email.com")
                 .build();
 
         mockMvc.perform(post("/users")
@@ -56,7 +56,7 @@ class UserControllerTest {
     @Test
     void createUser_whenMissingEmail_thenStatusBadRequest() throws Exception {
         UserDto userDto = UserDto.builder()
-                .name("John Doe")
+                .name("user1")
                 .build();
 
         mockMvc.perform(post("/users")
@@ -68,7 +68,7 @@ class UserControllerTest {
     @Test
     void createUser_whenInvalidEmail_thenStatusBadRequest() throws Exception {
         UserDto userDto = UserDto.builder()
-                .name("John Doe")
+                .name("user1")
                 .email("invalid-email")
                 .build();
 

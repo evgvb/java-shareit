@@ -53,7 +53,7 @@ class UserClientTest {
     void createUser_whenValidData_thenSuccess() {
         UserDto userDto = UserDto.builder()
                 .name("John Doe")
-                .email("john@example.com")
+                .email("john@email.com")
                 .build();
 
         ResponseEntity<Object> expectedResponse = new ResponseEntity<>("Created", HttpStatus.OK);

@@ -17,7 +17,7 @@ class UserMapperTest {
         User user = User.builder()
                 .id(1L)
                 .name("John Doe")
-                .email("john@example.com")
+                .email("john@email.com")
                 .build();
 
         UserDto dto = UserMapper.toUserDto(user);
@@ -25,7 +25,7 @@ class UserMapperTest {
         assertThat(dto).isNotNull();
         assertThat(dto.getId()).isEqualTo(1L);
         assertThat(dto.getName()).isEqualTo("John Doe");
-        assertThat(dto.getEmail()).isEqualTo("john@example.com");
+        assertThat(dto.getEmail()).isEqualTo("john@email.com");
     }
 
     @Test
@@ -38,7 +38,7 @@ class UserMapperTest {
         UserDto dto = UserDto.builder()
                 .id(1L)
                 .name("John Doe")
-                .email("john@example.com")
+                .email("john@email.com")
                 .build();
 
         User user = UserMapper.toUser(dto);
@@ -46,7 +46,7 @@ class UserMapperTest {
         assertThat(user).isNotNull();
         assertThat(user.getId()).isEqualTo(1L);
         assertThat(user.getName()).isEqualTo("John Doe");
-        assertThat(user.getEmail()).isEqualTo("john@example.com");
+        assertThat(user.getEmail()).isEqualTo("john@email.com");
     }
 
     @Test
@@ -59,7 +59,7 @@ class UserMapperTest {
         User user = User.builder()
                 .id(1L)
                 .name("Old Name")
-                .email("old@example.com")
+                .email("old@email.com")
                 .build();
 
         Map<String, Object> updates = new HashMap<>();
@@ -68,7 +68,7 @@ class UserMapperTest {
         User updatedUser = UserMapper.updateFromMap(user, updates);
 
         assertThat(updatedUser.getName()).isEqualTo("New Name");
-        assertThat(updatedUser.getEmail()).isEqualTo("old@example.com");
+        assertThat(updatedUser.getEmail()).isEqualTo("old@email.com");
     }
 
     @Test
@@ -76,16 +76,16 @@ class UserMapperTest {
         User user = User.builder()
                 .id(1L)
                 .name("John Doe")
-                .email("old@example.com")
+                .email("old@email.com")
                 .build();
 
         Map<String, Object> updates = new HashMap<>();
-        updates.put("email", "new@example.com");
+        updates.put("email", "new@email.com");
 
         User updatedUser = UserMapper.updateFromMap(user, updates);
 
         assertThat(updatedUser.getName()).isEqualTo("John Doe");
-        assertThat(updatedUser.getEmail()).isEqualTo("new@example.com");
+        assertThat(updatedUser.getEmail()).isEqualTo("new@email.com");
     }
 
     @Test
@@ -93,7 +93,7 @@ class UserMapperTest {
         User user = User.builder()
                 .id(1L)
                 .name("John Doe")
-                .email("john@example.com")
+                .email("john@email.com")
                 .build();
 
         Map<String, Object> updates = new HashMap<>();
@@ -103,7 +103,7 @@ class UserMapperTest {
         User updatedUser = UserMapper.updateFromMap(user, updates);
 
         assertThat(updatedUser.getName()).isEqualTo("John Doe");
-        assertThat(updatedUser.getEmail()).isEqualTo("john@example.com");
+        assertThat(updatedUser.getEmail()).isEqualTo("john@email.com");
     }
 
     @Test
@@ -111,7 +111,7 @@ class UserMapperTest {
         User user = User.builder()
                 .id(1L)
                 .name("John Doe")
-                .email("john@example.com")
+                .email("john@email.com")
                 .build();
 
         User updatedUser = UserMapper.updateFromMap(user, new HashMap<>());
@@ -124,7 +124,7 @@ class UserMapperTest {
         User user = User.builder()
                 .id(1L)
                 .name("John Doe")
-                .email("john@example.com")
+                .email("john@email.com")
                 .build();
 
         User updatedUser = UserMapper.updateFromMap(user, null);
