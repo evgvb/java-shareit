@@ -5,6 +5,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
@@ -17,6 +18,7 @@ import ru.practicum.shareit.user.model.User;
 import ru.practicum.shareit.user.repository.UserRepository;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
 
@@ -60,21 +62,13 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                 });
 
         // Получаем вещи, связанные с запросом
-        log.debug("Ищем вещи с request_id = {}", requestId);
         List<Item> items = itemRepository.findAllByRequestId(requestId);
-        log.debug("Найдено {} вещей для запроса ID {}", items.size(), requestId);
 
-        if (!items.isEmpty()) {
-            for (Item item : items) {
-                log.info("  - Вещь: ID={}, name='{}', ownerId={}",
-                        item.getId(), item.getName(), item.getOwner().getId());
-            }
-        }
+        List<ItemDto> itemDtos = items.stream()
+                .map(ItemMapper::toItemDto)
+                .collect(Collectors.toList());
 
-        ItemRequestDto dto = ItemRequestMapper.toItemRequestDtoWithItems(itemRequest,
-                items.stream().map(ItemMapper::toItemDto).collect(Collectors.toList()));
-
-        return dto;
+        return ItemRequestMapper.toItemRequestDtoWithItems(itemRequest, itemDtos);
     }
 
     @Override
@@ -83,21 +77,43 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
         findUserById(userId);
 
+        // 1 запрос: получаем запросы пользователя
         List<ItemRequest> requests = itemRequestRepository.findAllByRequestorId(userId, SORT_BY_CREATED_DESC);
         log.debug("Найдено {} запросов пользователя ID {}", requests.size(), userId);
 
-        List<ItemRequestDto> result = requests.stream()
+        // Применяем пагинацию до запроса вещей
+        List<ItemRequest> paginatedRequests = requests.stream()
                 .skip(from)
                 .limit(size)
-                .map(request -> {
-                    List<Item> items = itemRepository.findAllByRequestId(request.getId());
-                    log.debug("  - Запрос ID {}: найдено {} вещей", request.getId(), items.size());
-                    return ItemRequestMapper.toItemRequestDtoWithItems(request,
-                            items.stream().map(ItemMapper::toItemDto).collect(Collectors.toList()));
-                })
                 .collect(Collectors.toList());
 
-        return result;
+        if (paginatedRequests.isEmpty()) {
+            return List.of();
+        }
+
+        // Собираем ID запросов
+        List<Long> requestIds = paginatedRequests.stream()
+                .map(ItemRequest::getId)
+                .collect(Collectors.toList());
+
+        // 2 запрос: получаем все вещи для этих запросов одним запросом
+        List<Item> allItems = itemRepository.findAllByRequestIdIn(requestIds);
+        log.debug("Найдено {} вещей для {} запросов", allItems.size(), requestIds.size());
+
+        // Группируем вещи по ID запроса
+        Map<Long, List<Item>> itemsByRequestId = allItems.stream()
+                .collect(Collectors.groupingBy(item -> item.getRequest().getId()));
+
+        // Формируем результат, используя данные из мапы
+        return paginatedRequests.stream()
+                .map(request -> {
+                    List<Item> itemsForRequest = itemsByRequestId.getOrDefault(request.getId(), List.of());
+                    List<ItemDto> itemDtos = itemsForRequest.stream()
+                            .map(ItemMapper::toItemDto)
+                            .collect(Collectors.toList());
+                    return ItemRequestMapper.toItemRequestDtoWithItems(request, itemDtos);
+                })
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -106,22 +122,43 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
         findUserById(userId);
 
+        // 1 запрос: получаем все запросы других пользователей
         List<ItemRequest> requests = itemRequestRepository.findAllExceptRequestor(userId, SORT_BY_CREATED_DESC);
-        log.info("Найдено {} запросов других пользователей", requests.size());
+        log.debug("Найдено {} запросов других пользователей", requests.size());
 
-        List<ItemRequestDto> result = requests.stream()
+        // Применяем пагинацию до запроса вещей
+        List<ItemRequest> paginatedRequests = requests.stream()
                 .skip(from)
                 .limit(size)
-                .map(request -> {
-                    List<Item> items = itemRepository.findAllByRequestId(request.getId());
-                    log.info("  - Запрос ID {} (от пользователя {}): найдено {} вещей",
-                            request.getId(), request.getRequestor().getId(), items.size());
-                    return ItemRequestMapper.toItemRequestDtoWithItems(request,
-                            items.stream().map(ItemMapper::toItemDto).collect(Collectors.toList()));
-                })
                 .collect(Collectors.toList());
 
-        return result;
+        if (paginatedRequests.isEmpty()) {
+            return List.of();
+        }
+
+        // Собираем ID запросов
+        List<Long> requestIds = paginatedRequests.stream()
+                .map(ItemRequest::getId)
+                .collect(Collectors.toList());
+
+        // 2 запрос: получаем все вещи для этих запросов одним запросом
+        List<Item> allItems = itemRepository.findAllByRequestIdIn(requestIds);
+        log.debug("Найдено {} вещей для {} запросов", allItems.size(), requestIds.size());
+
+        // Группируем вещи по ID запроса
+        Map<Long, List<Item>> itemsByRequestId = allItems.stream()
+                .collect(Collectors.groupingBy(item -> item.getRequest().getId()));
+
+        // Формируем результат, используя данные из мапы
+        return paginatedRequests.stream()
+                .map(request -> {
+                    List<Item> itemsForRequest = itemsByRequestId.getOrDefault(request.getId(), List.of());
+                    List<ItemDto> itemDtos = itemsForRequest.stream()
+                            .map(ItemMapper::toItemDto)
+                            .collect(Collectors.toList());
+                    return ItemRequestMapper.toItemRequestDtoWithItems(request, itemDtos);
+                })
+                .collect(Collectors.toList());
     }
 
     private User findUserById(Long userId) {
