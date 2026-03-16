@@ -56,13 +56,6 @@ class ItemRequestServiceImplTest {
         when(itemRequestRepository.findAllExceptRequestor(eq(userId), any(Sort.class)))
                 .thenReturn(mockRequests);
 
-        // Мокаем itemRepository для каждого запроса
-        when(itemRepository.findAllByRequestId(1L)).thenReturn(List.of());
-        when(itemRepository.findAllByRequestId(2L)).thenReturn(List.of());
-        when(itemRepository.findAllByRequestId(3L)).thenReturn(List.of());
-        when(itemRepository.findAllByRequestId(4L)).thenReturn(List.of());
-        when(itemRepository.findAllByRequestId(5L)).thenReturn(List.of());
-
         // Тест 1: Проверка пагинации с from=1, size=2
         List<ItemRequestDto> result1 = itemRequestService.getAllItemRequests(userId, 1, 2);
 

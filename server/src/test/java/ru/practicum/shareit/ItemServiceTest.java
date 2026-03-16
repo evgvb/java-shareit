@@ -240,14 +240,15 @@ public class ItemServiceTest {
         when(itemRepository.findById(anyLong())).thenReturn(Optional.of(item));
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(booker));
 
-        //when(bookingRepository.existsByItemIdAndBookerIdAndEndBefore(anyLong(), anyLong(), any(LocalDateTime.class))).thenReturn(false);
-        when(bookingRepository.existsByItemIdAndBookerId(anyLong(), anyLong())).thenReturn(false);
+        // секунда до конца или после
+        when(bookingRepository.existsByItemIdAndBookerIdAndEndBefore(anyLong(), anyLong(), any(LocalDateTime.class))).thenReturn(false);
+        //when(bookingRepository.existsByItemIdAndBookerId(anyLong(), anyLong())).thenReturn(false);
 
 
         assertThatThrownBy(() -> itemService.addComment(1L, commentDto, booker.getId()))
                 .isInstanceOf(ValidationException.class)
                 //.hasMessageContaining("только после завершения");
-                .hasMessageContaining("Комментировать можно только когда-либо бронированные вещи");
+                .hasMessageContaining("Вы можете оставить комментарий только после завершения бронирования");
     }
 
     @Test
@@ -267,8 +268,9 @@ public class ItemServiceTest {
         when(itemRepository.findById(anyLong())).thenReturn(Optional.of(item));
         when(userRepository.findById(anyLong())).thenReturn(Optional.of(booker));
 
-        //when(bookingRepository.existsByItemIdAndBookerIdAndEndBefore(anyLong(), anyLong(), any(LocalDateTime.class))).thenReturn(true);
-        when(bookingRepository.existsByItemIdAndBookerId(anyLong(), anyLong())).thenReturn(true);
+        // секунда до конца или после
+        when(bookingRepository.existsByItemIdAndBookerIdAndEndBefore(anyLong(), anyLong(), any(LocalDateTime.class))).thenReturn(true);
+        //when(bookingRepository.existsByItemIdAndBookerId(anyLong(), anyLong())).thenReturn(true);
 
         when(commentRepository.save(any(Comment.class))).thenReturn(savedComment);
 
