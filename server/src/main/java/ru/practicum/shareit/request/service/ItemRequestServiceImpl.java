@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import ru.practicum.shareit.item.dto.ItemDto;
 import ru.practicum.shareit.item.mapper.ItemMapper;
 import ru.practicum.shareit.item.model.Item;
 import ru.practicum.shareit.item.repository.ItemRepository;
@@ -62,13 +61,21 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                 });
 
         // Получаем вещи, связанные с запросом
+        log.debug("Ищем вещи с request_id = {}", requestId);
         List<Item> items = itemRepository.findAllByRequestId(requestId);
+        log.debug("Найдено {} вещей для запроса ID {}", items.size(), requestId);
 
-        List<ItemDto> itemDtos = items.stream()
-                .map(ItemMapper::toItemDto)
-                .collect(Collectors.toList());
+        if (!items.isEmpty()) {
+            for (Item item : items) {
+                log.info("  - Вещь: ID={}, name='{}', ownerId={}",
+                        item.getId(), item.getName(), item.getOwner().getId());
+            }
+        }
 
-        return ItemRequestMapper.toItemRequestDtoWithItems(itemRequest, itemDtos);
+        ItemRequestDto dto = ItemRequestMapper.toItemRequestDtoWithItems(itemRequest,
+                items.stream().map(ItemMapper::toItemDto).collect(Collectors.toList()));
+
+        return dto;
     }
 
     @Override
@@ -77,43 +84,27 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
         findUserById(userId);
 
-        // 1 запрос: получаем запросы пользователя
         List<ItemRequest> requests = itemRequestRepository.findAllByRequestorId(userId, SORT_BY_CREATED_DESC);
         log.debug("Найдено {} запросов пользователя ID {}", requests.size(), userId);
 
-        // Применяем пагинацию до запроса вещей
-        List<ItemRequest> paginatedRequests = requests.stream()
-                .skip(from)
-                .limit(size)
-                .collect(Collectors.toList());
-
-        if (paginatedRequests.isEmpty()) {
-            return List.of();
-        }
-
-        // Собираем ID запросов
-        List<Long> requestIds = paginatedRequests.stream()
+        List<Long> requestIds = requests.stream()
                 .map(ItemRequest::getId)
                 .collect(Collectors.toList());
 
-        // 2 запрос: получаем все вещи для этих запросов одним запросом
-        List<Item> allItems = itemRepository.findAllByRequestIdIn(requestIds);
-        log.debug("Найдено {} вещей для {} запросов", allItems.size(), requestIds.size());
+        Map<Long, List<Item>> itemsByRequestId = getItemsByRequestIds(requestIds);
 
-        // Группируем вещи по ID запроса
-        Map<Long, List<Item>> itemsByRequestId = allItems.stream()
-                .collect(Collectors.groupingBy(item -> item.getRequest().getId()));
-
-        // Формируем результат, используя данные из мапы
-        return paginatedRequests.stream()
+        List<ItemRequestDto> result = requests.stream()
+                .skip(from)
+                .limit(size)
                 .map(request -> {
-                    List<Item> itemsForRequest = itemsByRequestId.getOrDefault(request.getId(), List.of());
-                    List<ItemDto> itemDtos = itemsForRequest.stream()
-                            .map(ItemMapper::toItemDto)
-                            .collect(Collectors.toList());
-                    return ItemRequestMapper.toItemRequestDtoWithItems(request, itemDtos);
+                    List<Item> items = itemsByRequestId.getOrDefault(request.getId(), List.of());
+                    log.debug("  - Запрос ID {}: найдено {} вещей", request.getId(), items.size());
+                    return ItemRequestMapper.toItemRequestDtoWithItems(request,
+                            items.stream().map(ItemMapper::toItemDto).collect(Collectors.toList()));
                 })
                 .collect(Collectors.toList());
+
+        return result;
     }
 
     @Override
@@ -122,43 +113,27 @@ public class ItemRequestServiceImpl implements ItemRequestService {
 
         findUserById(userId);
 
-        // 1 запрос: получаем все запросы других пользователей
         List<ItemRequest> requests = itemRequestRepository.findAllExceptRequestor(userId, SORT_BY_CREATED_DESC);
-        log.debug("Найдено {} запросов других пользователей", requests.size());
+        log.info("Найдено {} запросов других пользователей", requests.size());
 
-        // Применяем пагинацию до запроса вещей
-        List<ItemRequest> paginatedRequests = requests.stream()
-                .skip(from)
-                .limit(size)
-                .collect(Collectors.toList());
-
-        if (paginatedRequests.isEmpty()) {
-            return List.of();
-        }
-
-        // Собираем ID запросов
-        List<Long> requestIds = paginatedRequests.stream()
+        List<Long> requestIds = requests.stream()
                 .map(ItemRequest::getId)
                 .collect(Collectors.toList());
 
-        // 2 запрос: получаем все вещи для этих запросов одним запросом
-        List<Item> allItems = itemRepository.findAllByRequestIdIn(requestIds);
-        log.debug("Найдено {} вещей для {} запросов", allItems.size(), requestIds.size());
+        Map<Long, List<Item>> itemsByRequestId = getItemsByRequestIds(requestIds);
 
-        // Группируем вещи по ID запроса
-        Map<Long, List<Item>> itemsByRequestId = allItems.stream()
-                .collect(Collectors.groupingBy(item -> item.getRequest().getId()));
-
-        // Формируем результат, используя данные из мапы
-        return paginatedRequests.stream()
+        List<ItemRequestDto> result = requests.stream()
+                .skip(from)
+                .limit(size)
                 .map(request -> {
-                    List<Item> itemsForRequest = itemsByRequestId.getOrDefault(request.getId(), List.of());
-                    List<ItemDto> itemDtos = itemsForRequest.stream()
-                            .map(ItemMapper::toItemDto)
-                            .collect(Collectors.toList());
-                    return ItemRequestMapper.toItemRequestDtoWithItems(request, itemDtos);
+                    List<Item> items = itemsByRequestId.getOrDefault(request.getId(), List.of());
+                    log.info("  - Запрос ID {} (от пользователя {}): найдено {} вещей",
+                            request.getId(), request.getRequestor().getId(), items.size());
+                    return ItemRequestMapper.toItemRequestDtoWithItems(request,
+                            items.stream().map(ItemMapper::toItemDto).collect(Collectors.toList()));
                 })
                 .collect(Collectors.toList());
+        return result;
     }
 
     private User findUserById(Long userId) {
@@ -167,5 +142,17 @@ public class ItemRequestServiceImpl implements ItemRequestService {
                     log.error("Пользователь с ID {} не найден", userId);
                     return new NoSuchElementException("Пользователь с ID " + userId + " не найден");
                 });
+    }
+
+    private Map<Long, List<Item>> getItemsByRequestIds(List<Long> requestIds) {
+        if (requestIds.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Item> allItems = itemRepository.findAllByRequestIdIn(requestIds);
+        log.debug("Найдено {} вещей для {} запросов", allItems.size(), requestIds.size());
+
+        return allItems.stream()
+                .collect(Collectors.groupingBy(item -> item.getRequest().getId()));
     }
 }
