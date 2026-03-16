@@ -256,15 +256,16 @@ public class ItemServiceImpl implements ItemService {
         log.info("*** author: {}", author);
 
         // Проверяем, что пользователь брал и вернул эту вещь
-        //LocalDateTime now = LocalDateTime.now();
-//        boolean hasBookedAndFinished = bookingRepository
-//                .existsByItemIdAndBookerIdAndEndBefore(itemId, authorId, now);
-//
-//        if (!hasBookedAndFinished) {
-//            throw new ValidationException("Вы можете оставить комментарий только после завершения бронирования");
-//        }
+        LocalDateTime now = LocalDateTime.now();
+        boolean hasBookerEver = bookingRepository
+                .existsByItemIdAndBookerIdAndEndBefore(itemId, authorId, now);
 
-        boolean hasBookerEver = bookingRepository.existsByItemIdAndBookerId(itemId, authorId);
+        if (!hasBookerEver) {
+            throw new ValidationException("Вы можете оставить комментарий только после завершения бронирования");
+        }
+
+        // тесты Postman бронь создают на 1 секунду, поэтому не всегда одинакого работают: комент создается то раньше, то позже времени завершения
+        //boolean hasBookerEver = bookingRepository.existsByItemIdAndBookerId(itemId, authorId);
 
         log.info("*** была бронь: {} ", hasBookerEver);
         if (!hasBookerEver) {
