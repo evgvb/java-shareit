@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="INFO">
+        <appender-ref ref="CONSOLE"/>
+    </root>
+
+    <!-- Отключаем конкретные логгеры -->
+    <logger name="org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping" level="OFF"/>
+    <logger name="org.springframework.web.method.annotation.RequestResponseBodyMethodProcessor" level="OFF"/>
+    <logger name="org.springframework.web.method.HandlerMethod" level="OFF"/>
+    <logger name="org.apache.tomcat.util.http.Parameters" level="OFF"/>
+    <logger name="org.springframework.web.servlet.DispatcherServlet" level="OFF"/>
+    <!-- Отключаем все Tomcat socket логи -->
+    <logger name="org.apache.coyote" level="OFF"/>
+    <logger name="org.apache.tomcat.util.net" level="OFF"/>
+
+<!--    &lt;!&ndash; Отключаем остальные Tomcat логи &ndash;&gt;-->
+<!--    <logger name="org.apache.tomcat.util.net" level="OFF"/>-->
+<!--    <logger name="org.apache.tomcat.util.net.NioChannel" level="OFF"/>-->
+<!--    <logger name="org.apache.coyote.http11" level="OFF"/>-->
+<!--    <logger name="org.apache.tomcat.util.net.NioChannel@671e1f28" level="OFF"/>-->
+<!--    <logger name="org.apache" level="OFF"/>-->
+
+    <!-- Для всего остального web - только ошибки -->
+    <logger name="org.springframework.web" level="WARN"/>
+</configuration>

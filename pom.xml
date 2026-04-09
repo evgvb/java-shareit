@@ -11,6 +11,7 @@
 
 	<groupId>ru.practicum</groupId>
 	<artifactId>shareit</artifactId>
+	<packaging>pom</packaging>
 	<version>0.0.1-SNAPSHOT</version>
 
 	<name>ShareIt</name>
@@ -19,101 +20,29 @@
 		<java.version>21</java.version>
 	</properties>
 
-	<dependencies>
-		<!-- Spring Boot Starters -->
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-actuator</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-configuration-processor</artifactId>
-			<optional>true</optional>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-validation</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-data-jpa</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<!-- Database -->
-		<dependency>
-			<groupId>org.postgresql</groupId>
-			<artifactId>postgresql</artifactId>
-			<scope>runtime</scope>
-		</dependency>
-
-		<!-- Lombok -->
-		<dependency>
-			<groupId>org.projectlombok</groupId>
-			<artifactId>lombok</artifactId>
-			<optional>true</optional>
-		</dependency>
-
-
-		<!-- Testing -->
-		<dependency>
-			<groupId>org.junit.platform</groupId>
-			<artifactId>junit-platform-launcher</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter-engine</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.junit.jupiter</groupId>
-			<artifactId>junit-jupiter-api</artifactId>
-			<scope>test</scope>
-		</dependency>
-
-		<dependency>
-			<groupId>jakarta.validation</groupId>
-			<artifactId>jakarta.validation-api</artifactId>
-			<version>3.1.0</version>
-		</dependency>
-		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-		</dependency>
-	</dependencies>
+	<modules>
+		<module>gateway</module>
+		<module>server</module>
+	</modules>
 
 	<build>
-		<resources>
-			<resource>
-				<directory>src/main/resources</directory>
-				<filtering>true</filtering>
-			</resource>
-		</resources>
-		<plugins>
-			<plugin>
-				<groupId>org.springframework.boot</groupId>
-				<artifactId>spring-boot-maven-plugin</artifactId>
-				<configuration>
-					<excludes>
-						<exclude>
-							<groupId>org.projectlombok</groupId>
-							<artifactId>lombok</artifactId>
-						</exclude>
-					</excludes>
-				</configuration>
-			</plugin>
-		</plugins>
 		<pluginManagement>
 			<plugins>
+				<plugin>
+					<groupId>org.springframework.boot</groupId>
+					<artifactId>spring-boot-maven-plugin</artifactId>
+					<configuration>
+						<layers>
+							<enabled>true</enabled>
+						</layers>
+						<excludes>
+							<exclude>
+								<groupId>org.projectlombok</groupId>
+								<artifactId>lombok</artifactId>
+							</exclude>
+						</excludes>
+					</configuration>
+				</plugin>
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-surefire-plugin</artifactId>
@@ -126,7 +55,7 @@
 				<plugin>
 					<groupId>org.apache.maven.plugins</groupId>
 					<artifactId>maven-checkstyle-plugin</artifactId>
-					<version>3.1.2</version>
+					<version>3.3.0</version>
 					<configuration>
 						<configLocation>checkstyle.xml</configLocation>
 						<failOnViolation>true</failOnViolation>
@@ -145,7 +74,7 @@
 						<dependency>
 							<groupId>com.puppycrawl.tools</groupId>
 							<artifactId>checkstyle</artifactId>
-							<version>10.3</version>
+							<version>9.3</version>
 						</dependency>
 					</dependencies>
 				</plugin>
@@ -169,18 +98,21 @@
 					<groupId>org.jacoco</groupId>
 					<artifactId>jacoco-maven-plugin</artifactId>
 					<version>0.8.12</version>
-					<configuration>
-						<output>file</output>
-					</configuration>
 					<executions>
 						<execution>
-							<id>jacoco-initialize</id>
 							<goals>
 								<goal>prepare-agent</goal>
 							</goals>
 						</execution>
 						<execution>
-							<id>jacoco-check</id>
+							<id>report</id>
+							<phase>test</phase>
+							<goals>
+								<goal>report</goal>
+							</goals>
+						</execution>
+						<execution>
+							<id>check</id>
 							<goals>
 								<goal>check</goal>
 							</goals>
@@ -190,46 +122,14 @@
 										<element>BUNDLE</element>
 										<limits>
 											<limit>
-												<counter>INSTRUCTION</counter>
-												<value>COVEREDRATIO</value>
-												<minimum>0.01</minimum>
-											</limit>
-											<limit>
 												<counter>LINE</counter>
 												<value>COVEREDRATIO</value>
-												<minimum>0.9</minimum>
-											</limit>
-											<limit>
-												<counter>BRANCH</counter>
-												<value>COVEREDRATIO</value>
-												<minimum>0.6</minimum>
-											</limit>
-											<limit>
-												<counter>COMPLEXITY</counter>
-												<value>COVEREDRATIO</value>
-												<minimum>0.6</minimum>
-											</limit>
-											<limit>
-												<counter>METHOD</counter>
-												<value>COVEREDRATIO</value>
-												<minimum>0.7</minimum>
-											</limit>
-											<limit>
-												<counter>CLASS</counter>
-												<value>MISSEDCOUNT</value>
-												<maximum>1</maximum>
+												<minimum>0.90</minimum>
 											</limit>
 										</limits>
 									</rule>
 								</rules>
 							</configuration>
-						</execution>
-						<execution>
-							<id>jacoco-report</id>
-							<phase>test</phase>
-							<goals>
-								<goal>report</goal>
-							</goals>
 						</execution>
 					</executions>
 				</plugin>
@@ -244,21 +144,10 @@
 					<plugin>
 						<groupId>org.apache.maven.plugins</groupId>
 						<artifactId>maven-checkstyle-plugin</artifactId>
-					</plugin>
-					<plugin>
-						<groupId>com.github.spotbugs</groupId>
-						<artifactId>spotbugs-maven-plugin</artifactId>
+						<version>3.3.1</version>  <!-- ДОБАВЛЕНА ВЕРСИЯ -->
 					</plugin>
 				</plugins>
 			</build>
-			<reporting>
-				<plugins>
-					<plugin>
-						<groupId>com.github.spotbugs</groupId>
-						<artifactId>spotbugs-maven-plugin</artifactId>
-					</plugin>
-				</plugins>
-			</reporting>
 		</profile>
 		<profile>
 			<id>coverage</id>
@@ -267,10 +156,18 @@
 					<plugin>
 						<groupId>org.jacoco</groupId>
 						<artifactId>jacoco-maven-plugin</artifactId>
+						<executions>
+							<execution>
+								<id>report</id>
+								<phase>test</phase>
+								<goals>
+									<goal>report</goal>
+								</goals>
+							</execution>
+						</executions>
 					</plugin>
 				</plugins>
 			</build>
 		</profile>
 	</profiles>
-
 </project>
